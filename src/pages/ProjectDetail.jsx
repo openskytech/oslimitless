@@ -15,6 +15,7 @@ import StatusBadge from '@/components/ui/StatusBadge';
 import PlatformBadge from '@/components/ui/PlatformBadge';
 import QuipToast, { useQuip } from '@/components/ui/QuipToast';
 import NotificationBell from '@/components/notifications/NotificationBell';
+import ProjectEditDialog from '@/components/project/ProjectEditDialog';
 
 export default function ProjectDetail() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -22,6 +23,7 @@ export default function ProjectDetail() {
   
   const [currentUser, setCurrentUser] = useState(null);
   const [activeTab, setActiveTab] = useState('board');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   const { quip, showQuip } = useQuip('general', true);
 
@@ -57,6 +59,7 @@ export default function ProjectDetail() {
   const currentMembership = members.find(m => m.user_email === currentUser?.email);
   const userRole = currentMembership?.role || 'viewer';
   const canEdit = ['ceo', 'manager', 'contributor'].includes(userRole);
+  const canManage = ['ceo', 'manager'].includes(userRole);
 
   if (!project || !currentUser) {
     return (
@@ -110,6 +113,11 @@ export default function ProjectDetail() {
                     <Github className="w-4 h-4 mr-1" /> GitHub
                   </Button>
                 </a>
+              )}
+              {canManage && (
+                <Button variant="outline" size="sm" onClick={() => setEditDialogOpen(true)}>
+                  <Settings className="w-4 h-4 mr-1" /> Edit
+                </Button>
               )}
               <NotificationBell 
                 userEmail={currentUser.email} 
@@ -172,6 +180,16 @@ export default function ProjectDetail() {
       </div>
 
       <QuipToast quip={quip} />
+      
+      <ProjectEditDialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        project={project}
+        onUpdated={() => {
+          queryClient.invalidateQueries(['project']);
+          queryClient.invalidateQueries(['projects']);
+        }}
+      />
     </div>
   );
 }

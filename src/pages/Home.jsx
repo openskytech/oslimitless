@@ -55,11 +55,11 @@ export default function Home() {
     enabled: workspaceIds.length > 0
   });
 
-  // Auto-select first workspace or create one
+  // Auto-select first workspace
   useEffect(() => {
     if (workspaces.length > 0 && !selectedWorkspace) {
       setSelectedWorkspace(workspaces[0]);
-      showQuip();
+      setTimeout(() => showQuip(), 500);
     }
   }, [workspaces]);
 

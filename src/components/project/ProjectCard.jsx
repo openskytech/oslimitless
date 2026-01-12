@@ -23,7 +23,7 @@ export default function ProjectCard({ project, taskStats = {} }) {
     wrench: Wrench, package: Package, code: Code, database: Database,
     cloud: Cloud, cpu: Cpu, layers: Layers, box: Box
   };
-  const ProjectIcon = iconMap[project.icon] || Folder;
+  const ProjectIcon = iconMap[project?.icon] || Folder;
 
   return (
     <motion.div

@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Crown, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from './utils';
+import { createPageUrl } from '@/utils';
 import PlatformBadge from '@/components/ui/PlatformBadge';
 import PriorityBadge from '@/components/ui/PriorityBadge';
 import { format } from 'date-fns';

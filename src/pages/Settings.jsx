@@ -1,206 +1,398 @@
 import React, { useState, useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Settings as SettingsIcon, Save, Sparkles, Bell } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
+import { 
+  ArrowLeft, Settings as SettingsIcon, Users, Sparkles, 
+  Bell, Link2, Save, Trash2, LogOut, Copy, Check
+} from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '../utils';
+import RoleBadge from '@/components/ui/RoleBadge';
+import InviteCodeDialog from '@/components/workspace/InviteCodeDialog';
+import { format } from 'date-fns';
 
 export default function Settings() {
-  const [user, setUser] = useState(null);
-  const [workspace, setWorkspace] = useState(null);
-  const [membership, setMembership] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [settings, setSettings] = useState({
-    workspace_name: '',
-    workspace_description: '',
+  const [currentUser, setCurrentUser] = useState(null);
+  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
+  const [inviteCodeOpen, setInviteCodeOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [workspaceSettings, setWorkspaceSettings] = useState({
+    name: '',
+    description: '',
     teams_webhook_url: '',
     quips_enabled: true
   });
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    const loadUser = async () => {
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+    };
     loadUser();
   }, []);
 
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      
-      const memberships = await base44.entities.WorkspaceMember.filter({ user_email: currentUser.email });
-      if (memberships.length > 0) {
-        setMembership(memberships[0]);
-        const workspaces = await base44.entities.Workspace.filter({ id: memberships[0].workspace_id });
-        if (workspaces.length > 0) {
-          const ws = workspaces[0];
-          setWorkspace(ws);
-          setSettings({
-            workspace_name: ws.name || '',
-            workspace_description: ws.description || '',
-            teams_webhook_url: ws.teams_webhook_url || '',
-            quips_enabled: ws.quips_enabled !== false
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load user:', error);
-    }
-  };
+  const { data: memberships = [] } = useQuery({
+    queryKey: ['memberships', currentUser?.email],
+    queryFn: () => base44.entities.WorkspaceMember.filter({ user_email: currentUser.email }),
+    enabled: !!currentUser?.email
+  });
 
-  const canManageSettings = membership?.role === 'ceo' || membership?.role === 'manager';
+  const workspaceIds = memberships.map(m => m.workspace_id);
+  const { data: workspaces = [] } = useQuery({
+    queryKey: ['workspaces', workspaceIds],
+    queryFn: async () => {
+      if (workspaceIds.length === 0) return [];
+      const results = await Promise.all(
+        workspaceIds.map(id => base44.entities.Workspace.filter({ id }))
+      );
+      return results.flat();
+    },
+    enabled: workspaceIds.length > 0
+  });
 
-  const handleSave = async () => {
-    if (!canManageSettings) return;
-    setLoading(true);
-    try {
-      await base44.entities.Workspace.update(workspace.id, {
-        name: settings.workspace_name,
-        description: settings.workspace_description,
-        teams_webhook_url: settings.teams_webhook_url,
-        quips_enabled: settings.quips_enabled
+  useEffect(() => {
+    if (workspaces.length > 0 && !selectedWorkspace) {
+      setSelectedWorkspace(workspaces[0]);
+      setWorkspaceSettings({
+        name: workspaces[0].name || '',
+        description: workspaces[0].description || '',
+        teams_webhook_url: workspaces[0].teams_webhook_url || '',
+        quips_enabled: workspaces[0].quips_enabled ?? true
       });
-      queryClient.invalidateQueries(['workspace']);
-      alert('Settings saved successfully!');
-    } catch (error) {
-      console.error('Failed to save settings:', error);
-      alert('Failed to save settings');
     }
-    setLoading(false);
+  }, [workspaces]);
+
+  const { data: members = [] } = useQuery({
+    queryKey: ['members', selectedWorkspace?.id],
+    queryFn: () => base44.entities.WorkspaceMember.filter({ workspace_id: selectedWorkspace.id }),
+    enabled: !!selectedWorkspace?.id
+  });
+
+  const { data: inviteCodes = [] } = useQuery({
+    queryKey: ['inviteCodes', selectedWorkspace?.id],
+    queryFn: () => base44.entities.InviteCode.filter({ workspace_id: selectedWorkspace.id, is_active: true }),
+    enabled: !!selectedWorkspace?.id
+  });
+
+  const currentMembership = memberships.find(m => m.workspace_id === selectedWorkspace?.id);
+  const userRole = currentMembership?.role || 'viewer';
+  const isCeo = userRole === 'ceo';
+  const isManager = ['ceo', 'manager'].includes(userRole);
+
+  const saveWorkspaceSettings = async () => {
+    if (!selectedWorkspace) return;
+    setSaving(true);
+    try {
+      await base44.entities.Workspace.update(selectedWorkspace.id, workspaceSettings);
+      queryClient.invalidateQueries(['workspaces']);
+    } catch (error) {
+      console.error('Failed to save:', error);
+    }
+    setSaving(false);
   };
 
-  if (!workspace) {
+  const updateMemberRole = async (memberId, newRole) => {
+    await base44.entities.WorkspaceMember.update(memberId, { role: newRole });
+    queryClient.invalidateQueries(['members']);
+  };
+
+  const removeMember = async (member) => {
+    if (!confirm(`Remove ${member.user_name || member.user_email} from the workspace?`)) return;
+    await base44.entities.WorkspaceMember.delete(member.id);
+    queryClient.invalidateQueries(['members']);
+  };
+
+  const deactivateInviteCode = async (code) => {
+    await base44.entities.InviteCode.update(code.id, { is_active: false });
+    queryClient.invalidateQueries(['inviteCodes']);
+  };
+
+  const copyInviteCode = (code) => {
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleLogout = () => {
+    base44.auth.logout();
+  };
+
+  if (!currentUser || !selectedWorkspace) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-indigo-50">
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <SettingsIcon className="w-8 h-8 text-indigo-600" />
-            Settings
-          </h1>
-          <p className="text-gray-500 mt-1">Manage workspace preferences</p>
-        </div>
-
-        {/* Workspace Settings */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Workspace Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Workspace Name</Label>
-              <Input
-                value={settings.workspace_name}
-                onChange={(e) => setSettings({ ...settings, workspace_name: e.target.value })}
-                disabled={!canManageSettings}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label>Description</Label>
-              <Input
-                value={settings.workspace_description}
-                onChange={(e) => setSettings({ ...settings, workspace_description: e.target.value })}
-                disabled={!canManageSettings}
-                className="mt-1"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Notifications */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Bell className="w-5 h-5" />
-              Microsoft Teams Integration
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label>Teams Webhook URL</Label>
-              <Input
-                type="url"
-                placeholder="https://outlook.office.com/webhook/..."
-                value={settings.teams_webhook_url}
-                onChange={(e) => setSettings({ ...settings, teams_webhook_url: e.target.value })}
-                disabled={!canManageSettings}
-                className="mt-1"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Get notifications in Teams when tasks are completed or assigned
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* UI Preferences */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5" />
-              UI Preferences
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Quirky UI Quips</p>
-                <p className="text-sm text-gray-600 mt-1">
-                  Show fun messages throughout the app
-                </p>
-              </div>
-              <Switch
-                checked={settings.quips_enabled}
-                onCheckedChange={(v) => setSettings({ ...settings, quips_enabled: v })}
-                disabled={!canManageSettings}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* User Profile */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Your Profile</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <Label>Email</Label>
-              <Input value={user?.email || ''} disabled className="mt-1" />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+      {/* Header */}
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center gap-4">
+            <Link to={createPageUrl('Home')}>
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+            </Link>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center shadow-lg">
+              <SettingsIcon className="w-5 h-5 text-white" />
             </div>
             <div>
-              <Label>Role</Label>
-              <Input value={membership?.role || ''} disabled className="mt-1 capitalize" />
+              <h1 className="font-bold text-xl text-gray-900">Settings</h1>
+              <p className="text-sm text-gray-500">{selectedWorkspace.name}</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Save Button */}
-        {canManageSettings && (
-          <div className="mt-8 flex justify-end">
-            <Button 
-              onClick={handleSave} 
-              disabled={loading}
-              size="lg"
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Save className="w-5 h-5 mr-2" />
-              {loading ? 'Saving...' : 'Save Settings'}
-            </Button>
           </div>
-        )}
+        </div>
+      </header>
+
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
+        <Tabs defaultValue="workspace">
+          <TabsList className="mb-6">
+            <TabsTrigger value="workspace">Workspace</TabsTrigger>
+            <TabsTrigger value="team">Team</TabsTrigger>
+            <TabsTrigger value="integrations">Integrations</TabsTrigger>
+            <TabsTrigger value="account">Account</TabsTrigger>
+          </TabsList>
+
+          {/* Workspace Settings */}
+          <TabsContent value="workspace">
+            <Card>
+              <CardHeader>
+                <CardTitle>Workspace Settings</CardTitle>
+                <CardDescription>Manage your workspace configuration</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <Label>Workspace Name</Label>
+                  <Input
+                    value={workspaceSettings.name}
+                    onChange={(e) => setWorkspaceSettings({ ...workspaceSettings, name: e.target.value })}
+                    disabled={!isManager}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label>Description</Label>
+                  <Input
+                    value={workspaceSettings.description}
+                    onChange={(e) => setWorkspaceSettings({ ...workspaceSettings, description: e.target.value })}
+                    disabled={!isManager}
+                    className="mt-1"
+                  />
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <Sparkles className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="font-medium">Quirky UI Mode</p>
+                      <p className="text-sm text-gray-500">Show fun quips and messages</p>
+                    </div>
+                  </div>
+                  <Switch
+                    checked={workspaceSettings.quips_enabled}
+                    onCheckedChange={(v) => setWorkspaceSettings({ ...workspaceSettings, quips_enabled: v })}
+                    disabled={!isManager}
+                  />
+                </div>
+
+                {isManager && (
+                  <Button onClick={saveWorkspaceSettings} disabled={saving}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Team Settings */}
+          <TabsContent value="team">
+            <div className="space-y-6">
+              {/* Invite Codes */}
+              {isCeo && (
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle>Invite Codes</CardTitle>
+                        <CardDescription>Manage team join codes</CardDescription>
+                      </div>
+                      <Button onClick={() => setInviteCodeOpen(true)}>
+                        <Link2 className="w-4 h-4 mr-2" /> Generate Code
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {inviteCodes.length === 0 ? (
+                      <p className="text-gray-500 text-center py-4">No active invite codes</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {inviteCodes.map(code => (
+                          <div key={code.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <code className="font-mono font-bold text-indigo-600">{code.code}</code>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => copyInviteCode(code.code)}
+                              >
+                                {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                              </Button>
+                              <RoleBadge role={code.default_role} size="xs" />
+                            </div>
+                            <div className="flex items-center gap-3">
+                              {code.expires_at && (
+                                <span className="text-xs text-gray-500">
+                                  Expires {format(new Date(code.expires_at), 'MMM d')}
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-500">
+                                {code.use_count || 0}{code.max_uses ? `/${code.max_uses}` : ''} uses
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500"
+                                onClick={() => deactivateInviteCode(code)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Team Members */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5" /> Team Members
+                  </CardTitle>
+                  <CardDescription>{members.length} members</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {members.map(member => (
+                      <div key={member.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                            {(member.user_name || member.user_email)[0].toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="font-medium">{member.user_name || member.user_email}</p>
+                            <p className="text-sm text-gray-500">{member.user_email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <RoleBadge role={member.role} />
+                          {isCeo && member.user_email !== currentUser.email && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500"
+                              onClick={() => removeMember(member)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* Integrations */}
+          <TabsContent value="integrations">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell className="w-5 h-5" /> Microsoft Teams Notifications
+                </CardTitle>
+                <CardDescription>Get notified when tasks are updated</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <Label>Teams Webhook URL</Label>
+                  <Input
+                    placeholder="https://outlook.office.com/webhook/..."
+                    value={workspaceSettings.teams_webhook_url}
+                    onChange={(e) => setWorkspaceSettings({ ...workspaceSettings, teams_webhook_url: e.target.value })}
+                    disabled={!isManager}
+                    className="mt-1 font-mono text-sm"
+                  />
+                  <p className="text-xs text-gray-500 mt-2">
+                    Create an Incoming Webhook connector in your Teams channel and paste the URL here
+                  </p>
+                </div>
+
+                {isManager && (
+                  <Button onClick={saveWorkspaceSettings} disabled={saving}>
+                    <Save className="w-4 h-4 mr-2" />
+                    {saving ? 'Saving...' : 'Save Webhook'}
+                  </Button>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Account */}
+          <TabsContent value="account">
+            <Card>
+              <CardHeader>
+                <CardTitle>Your Account</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
+                    {(currentUser.full_name || currentUser.email)[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-semibold text-lg">{currentUser.full_name || 'No name set'}</p>
+                    <p className="text-gray-500">{currentUser.email}</p>
+                    <RoleBadge role={userRole} />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <Button variant="destructive" onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <InviteCodeDialog
+        open={inviteCodeOpen}
+        onClose={() => setInviteCodeOpen(false)}
+        workspaceId={selectedWorkspace?.id}
+        workspaceName={selectedWorkspace?.name}
+        onCreated={() => queryClient.invalidateQueries(['inviteCodes'])}
+      />
     </div>
   );
 }

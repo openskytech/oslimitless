@@ -1,48 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, LayoutGrid, List, BarChart3, Lock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  ArrowLeft, LayoutGrid, List, BarChart3, Shield, 
+  Settings, ExternalLink, Github, Folder
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl } from '../utils';
+import KanbanBoard from '@/components/kanban/KanbanBoard';
 import StatusBadge from '@/components/ui/StatusBadge';
 import PlatformBadge from '@/components/ui/PlatformBadge';
-import KanbanBoard from '@/components/kanban/KanbanBoard';
 import QuipToast, { useQuip } from '@/components/ui/QuipToast';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 export default function ProjectDetail() {
   const urlParams = new URLSearchParams(window.location.search);
   const projectId = urlParams.get('id');
   
-  const [user, setUser] = useState(null);
-  const [workspace, setWorkspace] = useState(null);
-  const [membership, setMembership] = useState(null);
-  const { quip, showQuip } = useQuip('general', workspace?.quips_enabled);
+  const [currentUser, setCurrentUser] = useState(null);
+  const [activeTab, setActiveTab] = useState('board');
+  const queryClient = useQueryClient();
+  const { quip, showQuip } = useQuip('general', true);
 
   useEffect(() => {
+    const loadUser = async () => {
+      const user = await base44.auth.me();
+      setCurrentUser(user);
+    };
     loadUser();
   }, []);
 
-  const loadUser = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-      
-      const memberships = await base44.entities.WorkspaceMember.filter({ user_email: currentUser.email });
-      if (memberships.length > 0) {
-        setMembership(memberships[0]);
-        const workspaces = await base44.entities.Workspace.filter({ id: memberships[0].workspace_id });
-        if (workspaces.length > 0) {
-          setWorkspace(workspaces[0]);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load user:', error);
-    }
-  };
-
-  const { data: project, isLoading: projectLoading } = useQuery({
+  const { data: project } = useQuery({
     queryKey: ['project', projectId],
     queryFn: async () => {
       const projects = await base44.entities.Project.filter({ id: projectId });
@@ -53,33 +44,37 @@ export default function ProjectDetail() {
 
   const { data: tasks = [] } = useQuery({
     queryKey: ['tasks', projectId],
-    queryFn: () => base44.entities.Task.filter({ project_id: projectId }, '-created_date'),
+    queryFn: () => base44.entities.Task.filter({ project_id: projectId }),
     enabled: !!projectId
   });
 
   const { data: members = [] } = useQuery({
-    queryKey: ['members', workspace?.id],
-    queryFn: () => base44.entities.WorkspaceMember.filter({ workspace_id: workspace.id }),
-    enabled: !!workspace?.id
+    queryKey: ['members', project?.workspace_id],
+    queryFn: () => base44.entities.WorkspaceMember.filter({ workspace_id: project.workspace_id }),
+    enabled: !!project?.workspace_id
   });
 
-  const canEdit = membership?.role !== 'viewer';
+  const currentMembership = members.find(m => m.user_email === currentUser?.email);
+  const userRole = currentMembership?.role || 'viewer';
+  const canEdit = ['ceo', 'manager', 'contributor'].includes(userRole);
 
-  if (!project || projectLoading) {
+  if (!project || !currentUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+          className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full"
+        />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-purple-50">
-      <QuipToast quip={quip} />
-      
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50">
       {/* Header */}
-      <div className="bg-white border-b shadow-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-6 py-4">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to={createPageUrl('Home')}>
@@ -87,73 +82,96 @@ export default function ProjectDetail() {
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
+              <div 
+                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                style={{ background: project.color || 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+              >
+                <Folder className="w-5 h-5 text-white" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">{project.name}</h1>
-                <p className="text-sm text-gray-500">{project.description}</p>
+                <h1 className="font-bold text-xl text-gray-900">{project.name}</h1>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <StatusBadge status={project.status} size="sm" />
+                  {project.platforms?.slice(0, 3).map(p => (
+                    <PlatformBadge key={p} platform={p} size="xs" />
+                  ))}
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <StatusBadge status={project.status} size="md" />
-              {project.platforms?.map(platform => (
-                <PlatformBadge key={platform} platform={platform} size="md" />
-              ))}
+
+            <div className="flex items-center gap-2">
+              {project.github_repos?.length > 0 && (
+                <a 
+                  href={project.github_repos[0]} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline" size="sm">
+                    <Github className="w-4 h-4 mr-1" /> GitHub
+                  </Button>
+                </a>
+              )}
+              <NotificationBell 
+                userEmail={currentUser.email} 
+                workspaceId={project.workspace_id} 
+              />
             </div>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <Tabs defaultValue="board" className="w-full">
-          <TabsList className="bg-white border shadow-sm">
+      {/* Tabs */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+          <TabsList className="bg-gray-100/80 p-1">
             <TabsTrigger value="board" className="flex items-center gap-2">
-              <LayoutGrid className="w-4 h-4" />
-              Board
+              <LayoutGrid className="w-4 h-4" /> Board
             </TabsTrigger>
             <TabsTrigger value="list" className="flex items-center gap-2">
-              <List className="w-4 h-4" />
-              List View
+              <List className="w-4 h-4" /> List
             </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Analytics
+              <BarChart3 className="w-4 h-4" /> Analytics
             </TabsTrigger>
             <TabsTrigger value="vault" className="flex items-center gap-2">
-              <Lock className="w-4 h-4" />
-              Vault
+              <Shield className="w-4 h-4" /> Vault
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="board" className="mt-6">
-            <KanbanBoard
-              tasks={tasks}
-              project={project}
-              members={members}
-              currentUser={user}
-              onQuip={showQuip}
-              canEdit={canEdit}
-            />
+            <div className="overflow-x-auto pb-6">
+              <KanbanBoard
+                tasks={tasks}
+                project={project}
+                members={members}
+                currentUser={currentUser}
+                onQuip={showQuip}
+                canEdit={canEdit}
+              />
+            </div>
           </TabsContent>
 
           <TabsContent value="list" className="mt-6">
-            <div className="bg-white rounded-lg border p-6">
-              <p className="text-gray-500 text-center">List view coming soon...</p>
-            </div>
+            <Link to={createPageUrl('TaskList') + `?projectId=${projectId}`}>
+              <Button>Open List View</Button>
+            </Link>
           </TabsContent>
 
           <TabsContent value="analytics" className="mt-6">
-            <div className="bg-white rounded-lg border p-6">
-              <p className="text-gray-500 text-center">Analytics coming soon...</p>
-            </div>
+            <Link to={createPageUrl('ProjectAnalytics') + `?projectId=${projectId}`}>
+              <Button>Open Analytics</Button>
+            </Link>
           </TabsContent>
 
           <TabsContent value="vault" className="mt-6">
-            <div className="bg-white rounded-lg border p-6">
-              <p className="text-gray-500 text-center">Vault integration coming soon...</p>
-            </div>
+            <Link to={createPageUrl('Vault') + `?workspaceId=${project.workspace_id}`}>
+              <Button>Open Vault</Button>
+            </Link>
           </TabsContent>
         </Tabs>
       </div>
+
+      <QuipToast quip={quip} />
     </div>
   );
 }

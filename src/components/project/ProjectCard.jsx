@@ -8,7 +8,7 @@ import {
 import StatusBadge from '@/components/ui/StatusBadge';
 import PlatformBadge from '@/components/ui/PlatformBadge';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl } from '../../utils';
 
 export default function ProjectCard({ project, taskStats = {} }) {
   const total = taskStats.total || 0;

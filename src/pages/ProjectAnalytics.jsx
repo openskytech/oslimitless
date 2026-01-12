@@ -12,7 +12,7 @@ import {
   Plus, TrendingUp, BarChart3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl } from '../utils';
 import AnalyticsCard from '@/components/analytics/AnalyticsCard';
 import AnalyticsChart from '@/components/analytics/AnalyticsChart';
 import PlatformBadge from '@/components/ui/PlatformBadge';

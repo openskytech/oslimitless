@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   ArrowLeft, LayoutGrid, List, BarChart3, Shield, 
-  Settings, ExternalLink, Github, Folder
+  Settings, ExternalLink, Github, Folder, Rocket, 
+  Lightbulb, Zap, Wrench, Package, Code, Database, 
+  Cloud, Cpu, Layers, Box
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -61,6 +63,13 @@ export default function ProjectDetail() {
   const canEdit = ['ceo', 'manager', 'contributor'].includes(userRole);
   const canManage = ['ceo', 'manager'].includes(userRole);
 
+  const iconMap = {
+    folder: Folder, rocket: Rocket, lightbulb: Lightbulb, zap: Zap,
+    wrench: Wrench, package: Package, code: Code, database: Database,
+    cloud: Cloud, cpu: Cpu, layers: Layers, box: Box
+  };
+  const ProjectIcon = iconMap[project.icon] || Folder;
+
   if (!project || !currentUser) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-indigo-50">
@@ -89,7 +98,7 @@ export default function ProjectDetail() {
                 className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
                 style={{ background: project.color || 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
               >
-                <Folder className="w-5 h-5 text-white" />
+                <ProjectIcon className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h1 className="font-bold text-xl text-gray-900">{project.name}</h1>

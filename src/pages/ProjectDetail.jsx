@@ -94,12 +94,18 @@ export default function ProjectDetail() {
                   <ArrowLeft className="w-5 h-5" />
                 </Button>
               </Link>
-              <div 
-                className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
-                style={{ background: project.color || 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
-              >
-                <ProjectIcon className="w-5 h-5 text-white" />
-              </div>
+              {project.icon_url ? (
+                <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg">
+                  <img src={project.icon_url} alt={project.name} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div 
+                  className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                  style={{ background: project.color || 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}
+                >
+                  <ProjectIcon className="w-5 h-5 text-white" />
+                </div>
+              )}
               <div>
                 <h1 className="font-bold text-xl text-gray-900">{project.name}</h1>
                 <div className="flex items-center gap-2 mt-0.5">

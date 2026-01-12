@@ -6,7 +6,7 @@ import { base44 } from '@/api/base44Client';
 import PlatformBadge from '@/components/ui/PlatformBadge';
 import { 
   Folder, Rocket, Lightbulb, Zap, Wrench, Package, 
-  Code, Database, Cloud, Cpu, Layers, Box
+  Code, Database, Cloud, Cpu, Layers, Box, Upload, X
 } from 'lucide-react';
 
 const PLATFORMS = ['web', 'ios', 'android', 'api', 'other'];
@@ -37,15 +37,18 @@ const COLORS = [
 
 export default function ProjectEditDialog({ open, onClose, project, onUpdated }) {
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [platforms, setPlatforms] = useState([]);
   const [icon, setIcon] = useState('folder');
   const [color, setColor] = useState(COLORS[0]);
+  const [iconUrl, setIconUrl] = useState(null);
 
   useEffect(() => {
     if (project) {
       setPlatforms(project.platforms || []);
       setIcon(project.icon || 'folder');
       setColor(project.color || COLORS[0]);
+      setIconUrl(project.icon_url || null);
     }
   }, [project]);
 
@@ -57,10 +60,29 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
     }
   };
 
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setIconUrl(file_url);
+    } catch (error) {
+      console.error('Failed to upload icon:', error);
+    }
+    setUploading(false);
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
-      await base44.entities.Project.update(project.id, { platforms, icon, color });
+      await base44.entities.Project.update(project.id, { 
+        platforms, 
+        icon: iconUrl ? null : icon, 
+        color, 
+        icon_url: iconUrl 
+      });
       onUpdated?.();
       onClose();
     } catch (error) {
@@ -79,24 +101,63 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
         <div className="space-y-5 py-4">
           <div>
             <Label className="mb-3 block">Project Icon</Label>
-            <div className="grid grid-cols-6 gap-2">
-              {ICONS.map(({ name, Icon }) => (
-                <button
-                  key={name}
-                  type="button"
-                  onClick={() => setIcon(name)}
-                  className={`
-                    w-12 h-12 rounded-lg flex items-center justify-center transition-all
-                    ${icon === name 
-                      ? 'ring-2 ring-offset-1 ring-indigo-500 bg-indigo-50' 
-                      : 'bg-gray-50 hover:bg-gray-100'
-                    }
-                  `}
-                >
-                  <Icon className={`w-5 h-5 ${icon === name ? 'text-indigo-600' : 'text-gray-600'}`} />
-                </button>
-              ))}
+            
+            {/* Custom Upload */}
+            <div className="mb-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="hidden"
+                id="icon-upload"
+                disabled={uploading}
+              />
+              <label
+                htmlFor="icon-upload"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 hover:border-indigo-400 cursor-pointer transition-colors bg-gray-50 hover:bg-indigo-50"
+              >
+                <Upload className="w-4 h-4" />
+                <span className="text-sm font-medium">
+                  {uploading ? 'Uploading...' : 'Upload Custom Icon'}
+                </span>
+              </label>
+              
+              {iconUrl && (
+                <div className="mt-2 inline-flex items-center gap-2 px-3 py-2 bg-indigo-50 rounded-lg">
+                  <img src={iconUrl} alt="Custom icon" className="w-6 h-6 rounded object-cover" />
+                  <span className="text-sm text-indigo-700">Custom icon uploaded</span>
+                  <button
+                    type="button"
+                    onClick={() => setIconUrl(null)}
+                    className="ml-1 text-indigo-600 hover:text-indigo-800"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Default Icons */}
+            {!iconUrl && (
+              <div className="grid grid-cols-6 gap-2">
+                {ICONS.map(({ name, Icon }) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setIcon(name)}
+                    className={`
+                      w-12 h-12 rounded-lg flex items-center justify-center transition-all
+                      ${icon === name 
+                        ? 'ring-2 ring-offset-1 ring-indigo-500 bg-indigo-50' 
+                        : 'bg-gray-50 hover:bg-gray-100'
+                      }
+                    `}
+                  >
+                    <Icon className={`w-5 h-5 ${icon === name ? 'text-indigo-600' : 'text-gray-600'}`} />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div>

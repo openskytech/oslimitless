@@ -3,7 +3,8 @@ import { motion } from 'framer-motion';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { 
   Folder, ArrowRight, CheckCircle2, Clock, AlertCircle, 
-  LayoutGrid, ListTodo 
+  LayoutGrid, ListTodo, Rocket, Lightbulb, Zap, Wrench, 
+  Package, Code, Database, Cloud, Cpu, Layers, Box
 } from 'lucide-react';
 import StatusBadge from '@/components/ui/StatusBadge';
 import PlatformBadge from '@/components/ui/PlatformBadge';
@@ -17,6 +18,13 @@ export default function ProjectCard({ project, taskStats = {} }) {
   const blocked = taskStats.blocked || 0;
   const progress = total > 0 ? Math.round((done / total) * 100) : 0;
 
+  const iconMap = {
+    folder: Folder, rocket: Rocket, lightbulb: Lightbulb, zap: Zap,
+    wrench: Wrench, package: Package, code: Code, database: Database,
+    cloud: Cloud, cpu: Cpu, layers: Layers, box: Box
+  };
+  const ProjectIcon = iconMap[project.icon] || Folder;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -26,20 +34,40 @@ export default function ProjectCard({ project, taskStats = {} }) {
     >
       <Link to={createPageUrl('ProjectDetail') + `?id=${project.id}`}>
         <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-indigo-200 overflow-hidden group cursor-pointer">
-          {/* Color Bar */}
-          <div 
-            className="h-2"
-            style={{ 
-              background: project.color || 'linear-gradient(90deg, #6366f1, #8b5cf6)' 
-            }}
-          />
+          {/* Color Bar or Image Header */}
+          {project.icon_url ? (
+            <div 
+              className="h-32 bg-cover bg-center relative"
+              style={{ 
+                backgroundImage: `url(${project.icon_url})`,
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-white" />
+            </div>
+          ) : (
+            <div 
+              className="h-2"
+              style={{ 
+                background: project.color || 'linear-gradient(90deg, #6366f1, #8b5cf6)' 
+              }}
+            />
+          )}
           
           <CardHeader className="pb-3">
             <div className="flex items-start justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                  <Folder className="w-5 h-5 text-white" />
-                </div>
+                {project.icon_url ? (
+                  <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg">
+                    <img src={project.icon_url} alt={project.name} className="w-full h-full object-cover" />
+                  </div>
+                ) : (
+                  <div 
+                    className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg"
+                    style={{ background: project.color || 'linear-gradient(90deg, #6366f1, #8b5cf6)' }}
+                  >
+                    <ProjectIcon className="w-5 h-5 text-white" />
+                  </div>
+                )}
                 <div>
                   <h3 className="font-bold text-lg text-gray-900 group-hover:text-indigo-600 transition-colors">
                     {project.name}

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { base44 } from '@/api/base44Client';
 import PlatformBadge from '@/components/ui/PlatformBadge';
 
 const PLATFORMS = ['web', 'ios', 'android', 'api', 'other'];

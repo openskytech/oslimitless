@@ -8,6 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 
+const getLocalDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function SubscriptionDialog({ open, onClose, subscription, workspaceId, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -16,7 +24,7 @@ export default function SubscriptionDialog({ open, onClose, subscription, worksp
     amount: 0,
     billing_frequency: 'monthly',
     billing_date: 1,
-    next_billing_date: format(new Date(), 'yyyy-MM-dd'),
+    next_billing_date: getLocalDateString(),
     payment_method: '',
     category: 'software',
     status: 'active',
@@ -34,7 +42,7 @@ export default function SubscriptionDialog({ open, onClose, subscription, worksp
         amount: 0,
         billing_frequency: 'monthly',
         billing_date: 1,
-        next_billing_date: format(new Date(), 'yyyy-MM-dd'),
+        next_billing_date: getLocalDateString(),
         payment_method: '',
         category: 'software',
         status: 'active',

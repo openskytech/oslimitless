@@ -8,13 +8,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { base44 } from '@/api/base44Client';
 import { format } from 'date-fns';
 
+const getLocalDateString = () => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 export default function FundingDialog({ open, onClose, funding, workspaceId, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     funding_name: '',
     funding_type: 'seed',
     amount: 0,
-    date: format(new Date(), 'yyyy-MM-dd'),
+    date: getLocalDateString(),
     investor_name: '',
     investor_contact: '',
     equity_percentage: 0,
@@ -31,7 +39,7 @@ export default function FundingDialog({ open, onClose, funding, workspaceId, onS
         funding_name: '',
         funding_type: 'seed',
         amount: 0,
-        date: format(new Date(), 'yyyy-MM-dd'),
+        date: getLocalDateString(),
         investor_name: '',
         investor_contact: '',
         equity_percentage: 0,

@@ -197,7 +197,7 @@ export default function Home() {
       {/* Header */}
       <header className={`sticky top-0 z-40 ${darkMode ? 'bg-gray-800/90' : 'bg-white/80'} backdrop-blur-md border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-end">
             <div className="flex items-center gap-2">
               {userRole === 'ceo' && (
                 <Button variant="outline" size="sm" onClick={() => setInviteCodeOpen(true)}>

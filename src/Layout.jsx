@@ -20,7 +20,7 @@ export default function Layout({ children, currentPageName }) {
   useEffect(() => {
     loadUser();
     document.documentElement.classList.remove('dark');
-  }, []);
+  }, [currentPageName]);
 
   const loadUser = async () => {
     try {

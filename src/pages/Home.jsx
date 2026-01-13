@@ -199,9 +199,17 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
+              {selectedWorkspace?.logo_url ? (
+                <img 
+                  src={selectedWorkspace.logo_url} 
+                  alt={selectedWorkspace.name} 
+                  className="w-10 h-10 rounded-xl object-cover shadow-lg" 
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg">
+                  <Zap className="w-5 h-5 text-white" />
+                </div>
+              )}
               <div>
                 <h1 className={`font-bold text-xl ${darkMode ? 'text-white' : 'text-gray-900'}`}>{selectedWorkspace?.name || 'OSLimitless'}</h1>
                 <div className="flex items-center gap-2">

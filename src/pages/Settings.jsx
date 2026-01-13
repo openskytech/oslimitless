@@ -453,6 +453,7 @@ export default function Settings() {
                   setSaving(true);
                   await base44.auth.updateMe({ full_name: currentUser.full_name });
                   setSaving(false);
+                  window.location.reload();
                 }} disabled={saving}>
                   <Save className="w-4 h-4 mr-2" />
                   {saving ? 'Saving...' : 'Save Changes'}

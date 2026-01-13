@@ -70,7 +70,7 @@ export default function JoinWorkspaceDialog({ open, onClose, currentUser, onJoin
       await base44.entities.WorkspaceMember.create({
         workspace_id: inviteCode.workspace_id,
         user_email: currentUser.email,
-        user_name: currentUser.full_name || currentUser.email,
+        user_name: currentUser.full_name || currentUser.email.split('@')[0],
         role: inviteCode.default_role
       });
 

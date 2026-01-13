@@ -132,9 +132,9 @@ export default function Layout({ children, currentPageName }) {
               </Button>
 
               <div className="hidden md:flex items-center gap-3 pl-3 border-l border-white/20">
-                <div className="text-right">
-                  <p className="text-sm font-medium">{membership?.user_name || user.full_name || user.email}</p>
-                  {membership && <RoleBadge role={membership.role} size="xs" />}
+                <div className="flex flex-col items-end gap-1">
+                  <p className="text-sm font-medium whitespace-nowrap">{membership?.user_name || user.full_name || user.email}</p>
+                  {membership && <div className="w-full flex justify-end"><RoleBadge role={membership.role} size="xs" /></div>}
                 </div>
                 <Button
                   variant="ghost"

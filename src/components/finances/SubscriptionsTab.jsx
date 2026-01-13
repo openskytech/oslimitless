@@ -81,7 +81,7 @@ export default function SubscriptionsTab({ workspaceId }) {
 
                 {sub.next_billing_date && (
                   <p className="text-sm text-gray-500">
-                    Next billing: {format(new Date(sub.next_billing_date), 'MMM d, yyyy')}
+                    Next billing: {format(new Date(sub.next_billing_date + 'T00:00:00'), 'MMM d, yyyy')}
                   </p>
                 )}
               </CardContent>

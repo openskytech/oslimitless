@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, Settings as SettingsIcon, Users, Sparkles, 
-  Bell, Link2, Save, Trash2, LogOut, Copy, Check, Upload, X, Ticket
+  Bell, Link2, Save, Trash2, LogOut, Copy, Check, Upload, X, Ticket, Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -25,6 +25,8 @@ export default function Settings() {
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [inviteCodeOpen, setInviteCodeOpen] = useState(false);
   const [joinWorkspaceOpen, setJoinWorkspaceOpen] = useState(false);
+  const [webhookDialogOpen, setWebhookDialogOpen] = useState(false);
+  const [editingWebhook, setEditingWebhook] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [copiedCodeId, setCopiedCodeId] = useState(null);
@@ -90,6 +92,12 @@ export default function Settings() {
     enabled: !!selectedWorkspace?.id
   });
 
+  const { data: webhooks = [] } = useQuery({
+    queryKey: ['webhooks', selectedWorkspace?.id],
+    queryFn: () => base44.entities.Webhook.filter({ workspace_id: selectedWorkspace.id }),
+    enabled: !!selectedWorkspace?.id
+  });
+
   const currentMembership = memberships.find(m => m.workspace_id === selectedWorkspace?.id);
   const userRole = currentMembership?.role || 'viewer';
   const isCeo = userRole === 'ceo';
@@ -141,6 +149,17 @@ export default function Settings() {
     navigator.clipboard.writeText(codeText);
     setCopiedCodeId(codeId);
     setTimeout(() => setCopiedCodeId(null), 2000);
+  };
+
+  const deleteWebhook = async (webhookId) => {
+    if (!confirm('Delete this webhook?')) return;
+    await base44.entities.Webhook.delete(webhookId);
+    queryClient.invalidateQueries(['webhooks']);
+  };
+
+  const toggleWebhook = async (webhook) => {
+    await base44.entities.Webhook.update(webhook.id, { enabled: !webhook.enabled });
+    queryClient.invalidateQueries(['webhooks']);
   };
 
   const handleLogout = () => {
@@ -407,31 +426,89 @@ export default function Settings() {
           <TabsContent value="integrations">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell className="w-5 h-5" /> Microsoft Teams Notifications
-                </CardTitle>
-                <CardDescription>Get notified when tasks are updated</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <Label>Teams Webhook URL</Label>
-                  <Input
-                    placeholder="https://outlook.office.com/webhook/..."
-                    value={workspaceSettings.teams_webhook_url}
-                    onChange={(e) => setWorkspaceSettings({ ...workspaceSettings, teams_webhook_url: e.target.value })}
-                    disabled={!isManager}
-                    className="mt-1 font-mono text-sm"
-                  />
-                  <p className="text-xs text-gray-500 mt-2">
-                    Create an Incoming Webhook connector in your Teams channel and paste the URL here
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bell className="w-5 h-5" /> Webhooks
+                    </CardTitle>
+                    <CardDescription>Manage notification webhooks for your workspace</CardDescription>
+                  </div>
+                  {isManager && (
+                    <Button onClick={() => {
+                      setEditingWebhook(null);
+                      setWebhookDialogOpen(true);
+                    }}>
+                      <Plus className="w-4 h-4 mr-2" /> Add Webhook
+                    </Button>
+                  )}
                 </div>
-
-                {isManager && (
-                  <Button onClick={saveWorkspaceSettings} disabled={saving}>
-                    <Save className="w-4 h-4 mr-2" />
-                    {saving ? 'Saving...' : 'Save Webhook'}
-                  </Button>
+              </CardHeader>
+              <CardContent>
+                {webhooks.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Bell className="w-12 h-12 mx-auto text-gray-300 mb-3" />
+                    <p className="text-gray-500 mb-4">No webhooks configured</p>
+                    {isManager && (
+                      <Button onClick={() => {
+                        setEditingWebhook(null);
+                        setWebhookDialogOpen(true);
+                      }}>
+                        <Plus className="w-4 h-4 mr-2" /> Add Your First Webhook
+                      </Button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {webhooks.map(webhook => (
+                      <div key={webhook.id} className="flex items-start justify-between p-4 bg-gray-50 rounded-lg">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-gray-900">{webhook.name}</h4>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${webhook.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-300 text-gray-600'}`}>
+                              {webhook.enabled ? 'Active' : 'Disabled'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-500 font-mono truncate">{webhook.url}</p>
+                          {webhook.events && webhook.events.length > 0 && (
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {webhook.events.map(event => (
+                                <span key={event} className="text-xs px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded">
+                                  {event.replace(/_/g, ' ')}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {isManager && (
+                          <div className="flex items-center gap-2 ml-4">
+                            <Switch
+                              checked={webhook.enabled}
+                              onCheckedChange={() => toggleWebhook(webhook)}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                setEditingWebhook(webhook);
+                                setWebhookDialogOpen(true);
+                              }}
+                            >
+                              <Link2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-red-500"
+                              onClick={() => deleteWebhook(webhook.id)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -540,6 +617,155 @@ export default function Settings() {
           setJoinWorkspaceOpen(false);
         }}
       />
+
+      <WebhookDialog
+        open={webhookDialogOpen}
+        onClose={() => {
+          setWebhookDialogOpen(false);
+          setEditingWebhook(null);
+        }}
+        webhook={editingWebhook}
+        workspaceId={selectedWorkspace?.id}
+        onSaved={() => {
+          queryClient.invalidateQueries(['webhooks']);
+          setWebhookDialogOpen(false);
+          setEditingWebhook(null);
+        }}
+      />
     </div>
+  );
+}
+
+function WebhookDialog({ open, onClose, webhook, workspaceId, onSaved }) {
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    url: '',
+    enabled: true,
+    events: []
+  });
+
+  const availableEvents = [
+    { value: 'task_created', label: 'Task Created' },
+    { value: 'task_completed', label: 'Task Completed' },
+    { value: 'task_assigned', label: 'Task Assigned' },
+    { value: 'ceo_question', label: 'CEO Question' },
+    { value: 'comment_added', label: 'Comment Added' }
+  ];
+
+  useEffect(() => {
+    if (webhook) {
+      setFormData({
+        name: webhook.name || '',
+        url: webhook.url || '',
+        enabled: webhook.enabled ?? true,
+        events: webhook.events || []
+      });
+    } else {
+      setFormData({
+        name: '',
+        url: '',
+        enabled: true,
+        events: []
+      });
+    }
+  }, [webhook, open]);
+
+  const toggleEvent = (event) => {
+    if (formData.events.includes(event)) {
+      setFormData({ ...formData, events: formData.events.filter(e => e !== event) });
+    } else {
+      setFormData({ ...formData, events: [...formData.events, event] });
+    }
+  };
+
+  const handleSave = async () => {
+    if (!formData.name.trim() || !formData.url.trim()) return;
+
+    setLoading(true);
+    try {
+      if (webhook) {
+        await base44.entities.Webhook.update(webhook.id, formData);
+      } else {
+        await base44.entities.Webhook.create({
+          ...formData,
+          workspace_id: workspaceId
+        });
+      }
+      onSaved?.();
+    } catch (error) {
+      console.error('Failed to save webhook:', error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{webhook ? 'Edit Webhook' : 'Add Webhook'}</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div>
+            <Label>Name</Label>
+            <Input
+              placeholder="e.g., Main Teams Channel"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className="mt-1"
+            />
+          </div>
+
+          <div>
+            <Label>Webhook URL</Label>
+            <Input
+              placeholder="https://outlook.office.com/webhook/..."
+              value={formData.url}
+              onChange={(e) => setFormData({ ...formData, url: e.target.value })}
+              className="mt-1 font-mono text-sm"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Microsoft Teams, Slack, or any webhook endpoint
+            </p>
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Events</Label>
+            <div className="space-y-2">
+              {availableEvents.map(event => (
+                <label key={event.value} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.events.includes(event.value)}
+                    onChange={() => toggleEvent(event.value)}
+                    className="rounded border-gray-300"
+                  />
+                  <span className="text-sm">{event.label}</span>
+                </label>
+              ))}
+            </div>
+            <p className="text-xs text-gray-500 mt-2">
+              Leave empty to receive all events
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <Label className="mb-0">Enabled</Label>
+            <Switch
+              checked={formData.enabled}
+              onCheckedChange={(v) => setFormData({ ...formData, enabled: v })}
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={loading || !formData.name.trim() || !formData.url.trim()}>
+            {loading ? 'Saving...' : 'Save Webhook'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

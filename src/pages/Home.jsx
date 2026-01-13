@@ -194,7 +194,7 @@ export default function Home() {
   return (
     <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-slate-50 via-white to-indigo-50'}`}>
       {/* Header */}
-      <header className={`sticky top-0 z-40 ${darkMode ? 'bg-gray-800/90' : 'bg-white/80'} backdrop-blur-md border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-end">
             <Link to={createPageUrl('Settings')}>
@@ -211,8 +211,8 @@ export default function Home() {
         {/* Quick Actions */}
         <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
           <div>
-            <h2 className={`text-2xl font-bold ${darkMode ? 'text-white' : 'text-gray-900'}`}>Projects</h2>
-            <p className={darkMode ? 'text-gray-400' : 'text-gray-500'}>Manage your team's work from idea to launch</p>
+            <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
+            <p className="text-gray-500">Manage your team's work from idea to launch</p>
           </div>
           <div className="flex gap-2">
             {canManage && (

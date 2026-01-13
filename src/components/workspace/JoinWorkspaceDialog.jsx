@@ -153,7 +153,10 @@ export default function JoinWorkspaceDialog({ open, onClose, currentUser, onJoin
 
         <DialogFooter>
           {success ? (
-            <Button onClick={handleClose} className="w-full">
+            <Button onClick={() => {
+              handleClose();
+              window.location.reload();
+            }} className="w-full">
               Let's Go!
             </Button>
           ) : (

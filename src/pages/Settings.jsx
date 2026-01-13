@@ -445,7 +445,7 @@ export default function Settings() {
                 <div>
                   <Label>Role in Workspace</Label>
                   <div className="mt-2">
-                    <RoleBadge role={userRole} fullWidth />
+                    <RoleBadge role={userRole} />
                   </div>
                 </div>
 

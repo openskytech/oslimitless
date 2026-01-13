@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { base44 } from '@/api/base44Client';
 import PlatformBadge from '@/components/ui/PlatformBadge';
+import { Image, X, Upload } from 'lucide-react';
 
 const PLATFORMS = ['web', 'ios', 'android', 'api', 'other'];
 const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
@@ -14,6 +15,7 @@ const CARD_COLORS = ['yellow', 'pink', 'blue', 'green', 'purple', 'orange'];
 
 export default function TaskCreateDialog({ open, onClose, project, initialStatus = 'backlog', onCreated, members = [] }) {
   const [loading, setLoading] = useState(false);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
   const [task, setTask] = useState({
     title: '',
     description: '',
@@ -21,7 +23,8 @@ export default function TaskCreateDialog({ open, onClose, project, initialStatus
     priority: 'medium',
     platforms: [],
     assignees: [],
-    card_color: 'yellow'
+    card_color: 'yellow',
+    screenshot_urls: []
   });
 
   const togglePlatform = (platform) => {
@@ -42,6 +45,30 @@ export default function TaskCreateDialog({ open, onClose, project, initialStatus
     }
   };
 
+  const handleScreenshotUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingScreenshot(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setTask({ 
+        ...task, 
+        screenshot_urls: [...(task.screenshot_urls || []), file_url] 
+      });
+    } catch (error) {
+      console.error('Failed to upload screenshot:', error);
+    }
+    setUploadingScreenshot(false);
+  };
+
+  const removeScreenshot = (urlToRemove) => {
+    setTask({
+      ...task,
+      screenshot_urls: (task.screenshot_urls || []).filter(url => url !== urlToRemove)
+    });
+  };
+
   const handleCreate = async () => {
     if (!task.title.trim()) return;
     setLoading(true);
@@ -59,7 +86,8 @@ export default function TaskCreateDialog({ open, onClose, project, initialStatus
         priority: 'medium',
         platforms: [],
         assignees: [],
-        card_color: 'yellow'
+        card_color: 'yellow',
+        screenshot_urls: []
       });
     } catch (error) {
       console.error('Failed to create task:', error);
@@ -185,6 +213,55 @@ export default function TaskCreateDialog({ open, onClose, project, initialStatus
                   />
                 ))}
               </div>
+            </div>
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Screenshots</Label>
+            <div className="space-y-3">
+              {(task.screenshot_urls || []).length > 0 && (
+                <div className="grid grid-cols-2 gap-2">
+                  {task.screenshot_urls.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img 
+                        src={url} 
+                        alt={`Screenshot ${index + 1}`} 
+                        className="w-full h-24 object-cover rounded-lg border-2 border-gray-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeScreenshot(url)}
+                        className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={uploadingScreenshot}
+                onClick={() => document.getElementById('screenshot-upload').click()}
+              >
+                {uploadingScreenshot ? (
+                  <>Uploading...</>
+                ) : (
+                  <>
+                    <Upload className="w-4 h-4 mr-2" />
+                    Add Screenshot
+                  </>
+                )}
+              </Button>
+              <input
+                id="screenshot-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleScreenshotUpload}
+                className="hidden"
+              />
             </div>
           </div>
         </div>

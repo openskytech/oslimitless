@@ -11,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   X, Save, Trash2, MessageSquare, Send, Calendar, Link2, 
-  AlertTriangle, CheckCircle2, User, Crown, ExternalLink 
+  AlertTriangle, CheckCircle2, User, Crown, ExternalLink, Upload, Image as ImageIcon
 } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -37,6 +37,7 @@ export default function TaskDetailSheet({
   const [editedTask, setEditedTask] = useState(null);
   const [newComment, setNewComment] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [uploadingScreenshot, setUploadingScreenshot] = useState(false);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -109,6 +110,36 @@ export default function TaskDetailSheet({
       setEditedTask({ ...editedTask, assignees: assignees.filter(a => a !== email) });
     } else {
       setEditedTask({ ...editedTask, assignees: [...assignees, email] });
+    }
+  };
+
+  const handleScreenshotUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingScreenshot(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const updatedScreenshots = [...(editedTask.screenshot_urls || []), file_url];
+      setEditedTask({ ...editedTask, screenshot_urls: updatedScreenshots });
+      
+      if (!isEditing) {
+        await base44.entities.Task.update(task.id, { screenshot_urls: updatedScreenshots });
+        onUpdate?.();
+      }
+    } catch (error) {
+      console.error('Failed to upload screenshot:', error);
+    }
+    setUploadingScreenshot(false);
+  };
+
+  const removeScreenshot = async (urlToRemove) => {
+    const updatedScreenshots = (editedTask.screenshot_urls || []).filter(url => url !== urlToRemove);
+    setEditedTask({ ...editedTask, screenshot_urls: updatedScreenshots });
+    
+    if (!isEditing) {
+      await base44.entities.Task.update(task.id, { screenshot_urls: updatedScreenshots });
+      onUpdate?.();
     }
   };
 
@@ -305,6 +336,58 @@ export default function TaskDetailSheet({
                 </div>
               </div>
             )}
+
+            {/* Screenshots */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">Screenshots</Label>
+              <div className="space-y-3">
+                {(editedTask.screenshot_urls || []).length > 0 && (
+                  <div className="grid grid-cols-2 gap-2">
+                    {(editedTask.screenshot_urls || []).map((url, index) => (
+                      <div key={index} className="relative group">
+                        <a href={url} target="_blank" rel="noopener noreferrer">
+                          <img 
+                            src={url} 
+                            alt={`Screenshot ${index + 1}`} 
+                            className="w-full h-32 object-cover rounded-lg border-2 border-gray-200 hover:border-indigo-400 transition-colors cursor-pointer"
+                          />
+                        </a>
+                        <button
+                          onClick={() => removeScreenshot(url)}
+                          className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  size="sm"
+                  disabled={uploadingScreenshot}
+                  onClick={() => document.getElementById('task-screenshot-upload').click()}
+                >
+                  {uploadingScreenshot ? (
+                    <>Uploading...</>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Add Screenshot
+                    </>
+                  )}
+                </Button>
+                <input
+                  id="task-screenshot-upload"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleScreenshotUpload}
+                  className="hidden"
+                />
+              </div>
+            </div>
 
             {/* GitHub Links */}
             <div className="space-y-3">

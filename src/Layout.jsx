@@ -37,6 +37,7 @@ export default function Layout({ children, currentPageName }) {
       }
     } catch (error) {
       console.error('Failed to load user:', error);
+      base44.auth.redirectToLogin();
     }
   };
 

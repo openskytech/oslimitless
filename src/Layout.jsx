@@ -57,6 +57,7 @@ export default function Layout({ children, currentPageName }) {
   const navItems = [
     { name: 'Home', icon: Home, page: 'Home' },
     ...(membership?.role === 'ceo' ? [{ name: 'CEO Inbox', icon: Crown, page: 'CEOInbox' }] : []),
+    ...(membership?.role === 'ceo' ? [{ name: 'Finances', icon: DollarSign, page: 'Finances' }] : []),
     { name: 'Vault', icon: Lock, page: 'Vault' },
     { name: 'Team', icon: Users, page: 'Team' },
     { name: 'Settings', icon: Settings, page: 'Settings' }

@@ -233,6 +233,7 @@ export default function TaskDetailSheet({
                     onClick={async () => {
                       const updatedAssignees = [...(editedTask.assignees || []), currentUser.email];
                       await base44.entities.Task.update(task.id, { assignees: updatedAssignees });
+                      setEditedTask({ ...editedTask, assignees: updatedAssignees });
                       onUpdate?.();
                     }}
                   >

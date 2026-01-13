@@ -18,7 +18,7 @@ const generateCode = () => {
   return code;
 };
 
-export default function InviteCodeDialog({ open, onClose, workspaceId, workspaceName, onCreated, userRole }) {
+export default function InviteCodeDialog({ open, onClose, workspaceId, workspaceName, onCreated, userRole = 'manager' }) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [createdCode, setCreatedCode] = useState(null);

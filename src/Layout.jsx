@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { 
   Home, Settings, LogOut, Bell, Crown, Users, 
-  Lock, Menu, X, Zap, Moon, Sun
+  Lock, Menu, X, Zap
 } from 'lucide-react';
 import RoleBadge from '@/components/ui/RoleBadge';
 import { Badge } from '@/components/ui/badge';
@@ -16,23 +16,11 @@ export default function Layout({ children, currentPageName }) {
   const [membership, setMembership] = useState(null);
   const [workspace, setWorkspace] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
 
   useEffect(() => {
     loadUser();
+    document.documentElement.classList.remove('dark');
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   const loadUser = async () => {
     try {
@@ -76,17 +64,17 @@ export default function Layout({ children, currentPageName }) {
 
   if (!user) {
     return (
-      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-indigo-50 via-white to-purple-50'}`}>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
         <div className="text-center">
-          <Zap className={`w-16 h-16 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'} mx-auto mb-4 animate-pulse`} />
-          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Loading OSLimitless...</p>
+          <Zap className="w-16 h-16 text-indigo-600 mx-auto mb-4 animate-pulse" />
+          <p className="text-gray-600">Loading OSLimitless...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
+    <div className="min-h-screen bg-gray-50">
       {/* Top Nav */}
       <nav className="bg-black text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

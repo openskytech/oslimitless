@@ -78,11 +78,14 @@ export default function Settings() {
     }
   }, [workspaces]);
 
-  const { data: members = [] } = useQuery({
+  const { data: allMembers = [] } = useQuery({
     queryKey: ['members', selectedWorkspace?.id],
     queryFn: () => base44.entities.WorkspaceMember.filter({ workspace_id: selectedWorkspace.id }),
     enabled: !!selectedWorkspace?.id
   });
+
+  // Filter out the current user from the members list
+  const members = allMembers.filter(member => member.user_email !== currentUser?.email);
 
   const { data: inviteCodes = [] } = useQuery({
     queryKey: ['inviteCodes', selectedWorkspace?.id],

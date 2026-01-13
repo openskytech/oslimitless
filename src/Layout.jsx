@@ -54,10 +54,29 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.logout();
   };
 
+  const [hasFinanceAccess, setHasFinanceAccess] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkFinanceAccess = async () => {
+      if (!user?.email || !membership?.workspace_id) return;
+      
+      if (membership.role === 'ceo') {
+        setHasFinanceAccess(true);
+      } else {
+        const access = await base44.entities.FinanceAccess.filter({
+          workspace_id: membership.workspace_id,
+          user_email: user.email
+        });
+        setHasFinanceAccess(access.length > 0);
+      }
+    };
+    checkFinanceAccess();
+  }, [user?.email, membership?.workspace_id, membership?.role]);
+
   const navItems = [
     { name: 'Home', icon: Home, page: 'Home' },
+    ...(hasFinanceAccess ? [{ name: 'Finances', icon: DollarSign, page: 'Finances' }] : []),
     ...(membership?.role === 'ceo' ? [{ name: 'CEO Inbox', icon: Crown, page: 'CEOInbox' }] : []),
-    ...(membership?.role === 'ceo' ? [{ name: 'Finances', icon: DollarSign, page: 'Finances' }] : []),
     { name: 'Vault', icon: Lock, page: 'Vault' },
     { name: 'Team', icon: Users, page: 'Team' },
     { name: 'Settings', icon: Settings, page: 'Settings' }

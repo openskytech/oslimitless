@@ -194,18 +194,23 @@ export default function TaskDetailSheet({
               <div className="flex flex-wrap gap-2 mb-2">
                 {members.map(member => {
                   const isAssigned = (editedTask.assignees || []).includes(member.user_email);
+                  const currentMembership = members.find(m => m.user_email === currentUser.email);
+                  const userRole = currentMembership?.role || 'viewer';
+                  const canManageAssignees = ['ceo', 'manager'].includes(userRole);
+                  const canClick = isEditing || (canManageAssignees && isAssigned);
+                  
                   return (
                     <button
                       key={member.user_email}
-                      onClick={() => isEditing && toggleAssignee(member.user_email)}
-                      disabled={!isEditing}
+                      onClick={() => canClick && toggleAssignee(member.user_email)}
+                      disabled={!canClick}
                       className={`
                         flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all
                         ${isAssigned 
                           ? 'bg-indigo-50 border-indigo-300 text-indigo-700' 
                           : 'bg-gray-50 border-gray-200 text-gray-500'
                         }
-                        ${!isEditing ? 'cursor-default' : 'cursor-pointer hover:border-indigo-300'}
+                        ${canClick ? 'cursor-pointer hover:border-indigo-300 hover:border-red-300' : 'cursor-default'}
                       `}
                     >
                       <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
@@ -216,19 +221,25 @@ export default function TaskDetailSheet({
                   );
                 })}
               </div>
-              {!isEditing && !(editedTask.assignees || []).includes(currentUser.email) && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={async () => {
-                    const updatedAssignees = [...(editedTask.assignees || []), currentUser.email];
-                    await base44.entities.Task.update(task.id, { assignees: updatedAssignees });
-                    onUpdate?.();
-                  }}
-                >
-                  <User className="w-4 h-4 mr-1" /> Assign to Me
-                </Button>
-              )}
+              {(() => {
+                const currentMembership = members.find(m => m.user_email === currentUser.email);
+                const userRole = currentMembership?.role || 'viewer';
+                const canSelfAssign = ['ceo', 'manager', 'contributor'].includes(userRole);
+                
+                return !isEditing && canSelfAssign && !(editedTask.assignees || []).includes(currentUser.email) && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      const updatedAssignees = [...(editedTask.assignees || []), currentUser.email];
+                      await base44.entities.Task.update(task.id, { assignees: updatedAssignees });
+                      onUpdate?.();
+                    }}
+                  >
+                    <User className="w-4 h-4 mr-1" /> Assign to Me
+                  </Button>
+                );
+              })()}
             </div>
 
             {/* Due Date & Priority Row */}

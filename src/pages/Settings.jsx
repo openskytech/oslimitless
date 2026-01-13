@@ -421,16 +421,40 @@ export default function Settings() {
                 <CardTitle>Your Account</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-2xl font-bold">
-                    {(currentUser.full_name || currentUser.email)[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-lg">{currentUser.full_name || 'No name set'}</p>
-                    <p className="text-gray-500">{currentUser.email}</p>
+                <div>
+                  <Label>Full Name</Label>
+                  <Input
+                    value={currentUser.full_name || ''}
+                    onChange={(e) => setCurrentUser({ ...currentUser, full_name: e.target.value })}
+                    placeholder="Enter your name"
+                    className="mt-1"
+                  />
+                </div>
+
+                <div>
+                  <Label>Email</Label>
+                  <Input
+                    value={currentUser.email}
+                    disabled
+                    className="mt-1 bg-gray-100"
+                  />
+                </div>
+
+                <div>
+                  <Label>Role in Workspace</Label>
+                  <div className="mt-2">
                     <RoleBadge role={userRole} />
                   </div>
                 </div>
+
+                <Button onClick={async () => {
+                  setSaving(true);
+                  await base44.auth.updateMe({ full_name: currentUser.full_name });
+                  setSaving(false);
+                }} disabled={saving}>
+                  <Save className="w-4 h-4 mr-2" />
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
 
                 <Separator />
 

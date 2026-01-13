@@ -17,12 +17,14 @@ import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
 import RoleBadge from '@/components/ui/RoleBadge';
 import InviteCodeDialog from '@/components/workspace/InviteCodeDialog';
+import JoinWorkspaceDialog from '@/components/workspace/JoinWorkspaceDialog';
 import { format } from 'date-fns';
 
 export default function Settings() {
   const [currentUser, setCurrentUser] = useState(null);
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [inviteCodeOpen, setInviteCodeOpen] = useState(false);
+  const [joinWorkspaceOpen, setJoinWorkspaceOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -458,6 +460,15 @@ export default function Settings() {
 
                 <Separator />
 
+                <div>
+                  <Label className="mb-2 block">Join Another Workspace</Label>
+                  <Button variant="outline" onClick={() => setJoinWorkspaceOpen(true)}>
+                    <Ticket className="w-4 h-4 mr-2" /> Enter Invite Code
+                  </Button>
+                </div>
+
+                <Separator />
+
                 <Button variant="destructive" onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" /> Sign Out
                 </Button>
@@ -473,6 +484,17 @@ export default function Settings() {
         workspaceId={selectedWorkspace?.id}
         workspaceName={selectedWorkspace?.name}
         onCreated={() => queryClient.invalidateQueries(['inviteCodes'])}
+      />
+
+      <JoinWorkspaceDialog
+        open={joinWorkspaceOpen}
+        onClose={() => setJoinWorkspaceOpen(false)}
+        currentUser={currentUser}
+        onJoined={() => {
+          queryClient.invalidateQueries(['memberships']);
+          queryClient.invalidateQueries(['workspaces']);
+          setJoinWorkspaceOpen(false);
+        }}
       />
     </div>
   );

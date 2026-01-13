@@ -204,11 +204,6 @@ export default function Home() {
                   <Ticket className="w-4 h-4 mr-1" /> Invite
                 </Button>
               )}
-              <Link to={createPageUrl('CEOInbox')}>
-                <Button variant="ghost" size="sm">
-                  <Crown className="w-4 h-4 mr-1" /> CEO Inbox
-                </Button>
-              </Link>
               <Link to={createPageUrl('Settings')}>
                 <Button variant="ghost" size="icon">
                   <Settings className="w-5 h-5" />

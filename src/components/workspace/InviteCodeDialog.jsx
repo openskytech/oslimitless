@@ -18,7 +18,7 @@ const generateCode = () => {
   return code;
 };
 
-export default function InviteCodeDialog({ open, onClose, workspaceId, workspaceName, onCreated }) {
+export default function InviteCodeDialog({ open, onClose, workspaceId, workspaceName, onCreated, userRole }) {
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [createdCode, setCreatedCode] = useState(null);
@@ -131,16 +131,20 @@ export default function InviteCodeDialog({ open, onClose, workspaceId, workspace
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ceo">
-                    <div className="flex items-center gap-2">
-                      <RoleBadge role="ceo" size="xs" /> CEO
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="manager">
-                    <div className="flex items-center gap-2">
-                      <RoleBadge role="manager" size="xs" /> Manager
-                    </div>
-                  </SelectItem>
+                  {userRole === 'ceo' && (
+                    <SelectItem value="ceo">
+                      <div className="flex items-center gap-2">
+                        <RoleBadge role="ceo" size="xs" /> CEO
+                      </div>
+                    </SelectItem>
+                  )}
+                  {userRole === 'ceo' && (
+                    <SelectItem value="manager">
+                      <div className="flex items-center gap-2">
+                        <RoleBadge role="manager" size="xs" /> Manager
+                      </div>
+                    </SelectItem>
+                  )}
                   <SelectItem value="contributor">
                     <div className="flex items-center gap-2">
                       <RoleBadge role="contributor" size="xs" /> Contributor

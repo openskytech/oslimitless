@@ -282,7 +282,7 @@ export default function Settings() {
           <TabsContent value="team">
             <div className="space-y-6">
               {/* Invite Codes */}
-              {isCeo && (
+              {isManager && (
                 <Card>
                   <CardHeader>
                     <div className="flex items-center justify-between">
@@ -506,6 +506,7 @@ export default function Settings() {
         workspaceId={selectedWorkspace?.id}
         workspaceName={selectedWorkspace?.name}
         onCreated={() => queryClient.invalidateQueries(['inviteCodes'])}
+        userRole={userRole}
       />
 
       <JoinWorkspaceDialog

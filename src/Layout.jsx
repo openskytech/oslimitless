@@ -194,11 +194,7 @@ export default function Layout({ children, currentPageName }) {
       </nav>
 
       {/* Main Content */}
-      <main>
-        <ErrorBoundary>
-          {children}
-        </ErrorBoundary>
-      </main>
+      <main>{children}</main>
     </div>
   );
 }

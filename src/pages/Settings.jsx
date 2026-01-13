@@ -147,7 +147,28 @@ export default function Settings() {
     base44.auth.logout();
   };
 
-  if (!currentUser || !selectedWorkspace) {
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!selectedWorkspace && workspaces.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-white to-indigo-50">
+        <div className="text-center">
+          <p className="text-gray-500">No workspace found. Please create or join a workspace.</p>
+          <Link to={createPageUrl('Home')}>
+            <Button className="mt-4">Go Home</Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  if (!selectedWorkspace) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin" />

@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, Settings as SettingsIcon, Users, Sparkles, 
-  Bell, Link2, Save, Trash2, LogOut, Copy, Check, Upload, X, Moon, Sun, Ticket
+  Bell, Link2, Save, Trash2, LogOut, Copy, Check, Upload, X, Ticket
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -26,10 +26,6 @@ export default function Settings() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    const saved = localStorage.getItem('theme');
-    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
   const [workspaceSettings, setWorkspaceSettings] = useState({
     name: '',
     description: '',
@@ -45,16 +41,8 @@ export default function Settings() {
       setCurrentUser(user);
     };
     loadUser();
+    document.documentElement.classList.remove('dark');
   }, []);
-
-  useEffect(() => {
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   const { data: memberships = [] } = useQuery({
     queryKey: ['memberships', currentUser?.email],
@@ -204,26 +192,6 @@ export default function Settings() {
                 <CardDescription>Manage your workspace configuration</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div>
-                  <Label>Theme</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Button
-                      variant={darkMode ? "outline" : "default"}
-                      size="sm"
-                      onClick={() => setDarkMode(false)}
-                    >
-                      <Sun className="w-4 h-4 mr-2" /> Light
-                    </Button>
-                    <Button
-                      variant={darkMode ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setDarkMode(true)}
-                    >
-                      <Moon className="w-4 h-4 mr-2" /> Dark
-                    </Button>
-                  </div>
-                </div>
-
                 <div>
                   <Label>Workspace Name</Label>
                   <Input

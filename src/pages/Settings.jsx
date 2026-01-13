@@ -450,19 +450,31 @@ export default function Settings() {
                 </div>
 
                 <Button onClick={async () => {
+                  if (!currentUser.full_name || !currentUser.full_name.trim()) {
+                    alert('Please enter a name');
+                    return;
+                  }
+                  
                   setSaving(true);
-                  await base44.auth.updateMe({ full_name: currentUser.full_name });
-                  
-                  // Update all WorkspaceMember records with the new name
-                  const userMemberships = await base44.entities.WorkspaceMember.filter({ user_email: currentUser.email });
-                  await Promise.all(
-                    userMemberships.map(membership => 
-                      base44.entities.WorkspaceMember.update(membership.id, { user_name: currentUser.full_name })
-                    )
-                  );
-                  
-                  setSaving(false);
-                  window.location.reload();
+                  try {
+                    console.log('Saving name:', currentUser.full_name);
+                    await base44.auth.updateMe({ full_name: currentUser.full_name.trim() });
+                    
+                    // Update all WorkspaceMember records with the new name
+                    const userMemberships = await base44.entities.WorkspaceMember.filter({ user_email: currentUser.email });
+                    await Promise.all(
+                      userMemberships.map(membership => 
+                        base44.entities.WorkspaceMember.update(membership.id, { user_name: currentUser.full_name.trim() })
+                      )
+                    );
+                    
+                    console.log('Name saved successfully');
+                    window.location.reload();
+                  } catch (error) {
+                    console.error('Failed to save name:', error);
+                    alert('Failed to save name. Please try again.');
+                    setSaving(false);
+                  }
                 }} disabled={saving}>
                   <Save className="w-4 h-4 mr-2" />
                   {saving ? 'Saving...' : 'Save Changes'}

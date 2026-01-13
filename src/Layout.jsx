@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { 
   Home, Settings, LogOut, Bell, Crown, Users, 
-  Lock, Menu, X, Zap
+  Lock, Menu, X, Zap, Moon, Sun
 } from 'lucide-react';
 import RoleBadge from '@/components/ui/RoleBadge';
 import { Badge } from '@/components/ui/badge';
@@ -16,10 +16,23 @@ export default function Layout({ children, currentPageName }) {
   const [membership, setMembership] = useState(null);
   const [workspace, setWorkspace] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
 
   useEffect(() => {
     loadUser();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
 
   const loadUser = async () => {
     try {
@@ -63,24 +76,28 @@ export default function Layout({ children, currentPageName }) {
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+      <div className={`min-h-screen flex items-center justify-center ${darkMode ? 'bg-gray-900' : 'bg-gradient-to-br from-indigo-50 via-white to-purple-50'}`}>
         <div className="text-center">
-          <Zap className="w-16 h-16 text-indigo-600 mx-auto mb-4 animate-pulse" />
-          <p className="text-gray-600">Loading OSLimitless...</p>
+          <Zap className={`w-16 h-16 ${darkMode ? 'text-indigo-400' : 'text-indigo-600'} mx-auto mb-4 animate-pulse`} />
+          <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>Loading OSLimitless...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Top Nav */}
-      <nav className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg sticky top-0 z-50">
+      <nav className="bg-black text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to={createPageUrl('Home')} className="flex items-center gap-3">
-              <Zap className="w-8 h-8" />
+              {workspace?.logo_url ? (
+                <img src={workspace.logo_url} alt={workspace.name} className="w-8 h-8 rounded-lg object-cover" />
+              ) : (
+                <Zap className="w-8 h-8" />
+              )}
               <div>
                 <h1 className="text-xl font-bold">OSLimitless</h1>
                 {workspace && (
@@ -113,6 +130,15 @@ export default function Layout({ children, currentPageName }) {
 
             {/* User Menu */}
             <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setDarkMode(!darkMode)}
+                className="text-white hover:bg-white/10"
+              >
+                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </Button>
+              
               <Button
                 variant="ghost"
                 size="icon"
@@ -155,7 +181,7 @@ export default function Layout({ children, currentPageName }) {
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/20 bg-indigo-700">
+          <div className="md:hidden border-t border-white/20 bg-gray-900">
             <div className="px-4 py-4 space-y-2">
               {navItems.map(item => {
                 const Icon = item.icon;

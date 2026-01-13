@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Users, UserPlus, Copy, Check, Plus, Trash2, Calendar } from 'lucide-react';
+import { Users, UserPlus, Copy, Check, Plus, Trash2, Calendar, Pencil } from 'lucide-react';
 import RoleBadge from '@/components/ui/RoleBadge';
 import { format } from 'date-fns';
 
@@ -16,6 +16,8 @@ export default function Team() {
   const [workspace, setWorkspace] = useState(null);
   const [membership, setMembership] = useState(null);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [editMemberDialogOpen, setEditMemberDialogOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState(null);
   const [copied, setCopied] = useState(false);
   const queryClient = useQueryClient();
 
@@ -75,6 +77,11 @@ export default function Team() {
     }
   };
 
+  const handleEditMember = (member) => {
+    setEditingMember(member);
+    setEditMemberDialogOpen(true);
+  };
+
   const copyToClipboard = (text) => {
     navigator.clipboard.writeText(text);
     setCopied(true);
@@ -128,6 +135,16 @@ export default function Team() {
                   </div>
                   <div className="flex items-center gap-3">
                     <RoleBadge role={member.role} size="md" />
+                    {canManageTeam && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleEditMember(member)}
+                        className="text-gray-500 hover:text-indigo-600 hover:bg-indigo-50"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                    )}
                     {canManageTeam && member.role !== 'ceo' && member.user_email !== user?.email && (
                       <Button
                         variant="ghost"
@@ -218,7 +235,85 @@ export default function Team() {
           setInviteDialogOpen(false);
         }}
       />
+
+      <EditMemberDialog
+        open={editMemberDialogOpen}
+        onClose={() => {
+          setEditMemberDialogOpen(false);
+          setEditingMember(null);
+        }}
+        member={editingMember}
+        onSaved={() => {
+          queryClient.invalidateQueries(['members']);
+          setEditMemberDialogOpen(false);
+          setEditingMember(null);
+        }}
+      />
     </div>
+  );
+}
+
+function EditMemberDialog({ open, onClose, member, onSaved }) {
+  const [loading, setLoading] = useState(false);
+  const [userName, setUserName] = useState('');
+
+  useEffect(() => {
+    if (member) {
+      setUserName(member.user_name || '');
+    }
+  }, [member]);
+
+  const handleSave = async () => {
+    if (!member || !userName.trim()) return;
+    
+    setLoading(true);
+    try {
+      await base44.entities.WorkspaceMember.update(member.id, {
+        user_name: userName.trim()
+      });
+      onSaved?.();
+    } catch (error) {
+      console.error('Failed to update member:', error);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit Member Name</DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div>
+            <Label>Email</Label>
+            <Input
+              value={member?.user_email || ''}
+              disabled
+              className="mt-1 bg-gray-50"
+            />
+          </div>
+
+          <div>
+            <Label>Full Name</Label>
+            <Input
+              value={userName}
+              onChange={(e) => setUserName(e.target.value)}
+              placeholder="Enter full name"
+              className="mt-1"
+            />
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={loading || !userName.trim()}>
+            {loading ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

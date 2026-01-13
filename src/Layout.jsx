@@ -133,7 +133,7 @@ export default function Layout({ children, currentPageName }) {
 
               <div className="hidden md:flex items-center gap-3 pl-3 border-l border-white/20">
                 <div className="text-right">
-                  <p className="text-sm font-medium">{user.full_name || user.email}</p>
+                  <p className="text-sm font-medium">{membership?.user_name || user.full_name || user.email}</p>
                   {membership && <RoleBadge role={membership.role} size="xs" />}
                 </div>
                 <Button

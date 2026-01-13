@@ -27,7 +27,7 @@ export default function Settings() {
   const [joinWorkspaceOpen, setJoinWorkspaceOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [copiedCodeId, setCopiedCodeId] = useState(null);
   const [workspaceSettings, setWorkspaceSettings] = useState({
     name: '',
     description: '',
@@ -137,10 +137,10 @@ export default function Settings() {
     queryClient.invalidateQueries(['inviteCodes']);
   };
 
-  const copyInviteCode = (code) => {
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const copyInviteCode = (codeId, codeText) => {
+    navigator.clipboard.writeText(codeText);
+    setCopiedCodeId(codeId);
+    setTimeout(() => setCopiedCodeId(null), 2000);
   };
 
   const handleLogout = () => {
@@ -308,9 +308,9 @@ export default function Settings() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => copyInviteCode(code.code)}
+                                onClick={() => copyInviteCode(code.id, code.code)}
                               >
-                                {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+                                {copiedCodeId === code.id ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
                               </Button>
                               <RoleBadge role={code.default_role} size="xs" />
                             </div>

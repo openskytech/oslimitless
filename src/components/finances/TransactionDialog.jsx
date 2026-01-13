@@ -1,127 +1,124 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { base44 } from '@/api/base44Client';
+import { format } from 'date-fns';
 
-export default function TransactionDialog({ open, onClose, workspaceId, accounts, onCreated }) {
+export default function TransactionDialog({ open, onClose, transaction, workspaceId, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    account_id: '',
-    transaction_date: new Date().toISOString().split('T')[0],
+    date: format(new Date(), 'yyyy-MM-dd'),
     description: '',
     amount: 0,
-    category: 'other',
-    payment_method: '',
+    category: 'expense',
+    subcategory: '',
+    vendor: '',
     notes: ''
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.description || !formData.amount) return;
-
-    setLoading(true);
-    try {
-      await base44.entities.Transaction.create({
-        workspace_id: workspaceId,
-        ...formData
-      });
-      onCreated();
+  useEffect(() => {
+    if (transaction) {
+      setFormData(transaction);
+    } else {
       setFormData({
-        account_id: '',
-        transaction_date: new Date().toISOString().split('T')[0],
+        date: format(new Date(), 'yyyy-MM-dd'),
         description: '',
         amount: 0,
-        category: 'other',
-        payment_method: '',
+        category: 'expense',
+        subcategory: '',
+        vendor: '',
         notes: ''
       });
+    }
+  }, [transaction]);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      if (transaction) {
+        await base44.entities.Transaction.update(transaction.id, formData);
+      } else {
+        await base44.entities.Transaction.create({ ...formData, workspace_id: workspaceId });
+      }
+      onSaved();
     } catch (error) {
-      console.error('Failed to create transaction:', error);
+      console.error('Failed to save transaction:', error);
     }
     setLoading(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Add Transaction</DialogTitle>
+          <DialogTitle>{transaction ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Account (Optional)</Label>
-            <Select value={formData.account_id} onValueChange={(value) => setFormData({ ...formData, account_id: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select account..." />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map(acc => (
-                  <SelectItem key={acc.id} value={acc.id}>{acc.account_name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
+        <div className="space-y-4 py-4">
           <div>
-            <Label>Date *</Label>
-            <Input
-              type="date"
-              value={formData.transaction_date}
-              onChange={(e) => setFormData({ ...formData, transaction_date: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <Label>Description *</Label>
+            <Label>Description</Label>
             <Input
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Software subscription payment"
+              placeholder="Monthly software subscription"
             />
           </div>
 
-          <div>
-            <Label>Amount * (Positive for income, negative for expense)</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-              placeholder="-99.99"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Category</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="income">Income</SelectItem>
+                  <SelectItem value="expense">Expense</SelectItem>
+                  <SelectItem value="transfer">Transfer</SelectItem>
+                  <SelectItem value="refund">Refund</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Amount</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Date</Label>
+              <Input
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Vendor/Payer</Label>
+              <Input
+                value={formData.vendor}
+                onChange={(e) => setFormData({ ...formData, vendor: e.target.value })}
+                placeholder="Company name"
+              />
+            </div>
           </div>
 
           <div>
-            <Label>Category</Label>
-            <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="salary">Salary</SelectItem>
-                <SelectItem value="subscription">Subscription</SelectItem>
-                <SelectItem value="software">Software</SelectItem>
-                <SelectItem value="hardware">Hardware</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="travel">Travel</SelectItem>
-                <SelectItem value="office">Office</SelectItem>
-                <SelectItem value="taxes">Taxes</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Payment Method</Label>
+            <Label>Subcategory (optional)</Label>
             <Input
-              value={formData.payment_method}
-              onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-              placeholder="Company Credit Card"
+              value={formData.subcategory}
+              onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
+              placeholder="e.g., payroll, software, marketing"
             />
           </div>
 
@@ -130,18 +127,17 @@ export default function TransactionDialog({ open, onClose, workspaceId, accounts
             <Textarea
               value={formData.notes}
               onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Additional information..."
-              className="h-20"
+              placeholder="Additional details..."
             />
           </div>
+        </div>
 
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={loading || !formData.description}>
-              {loading ? 'Adding...' : 'Add Transaction'}
-            </Button>
-          </DialogFooter>
-        </form>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={loading || !formData.description}>
+            {loading ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

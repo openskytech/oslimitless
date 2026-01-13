@@ -1,107 +1,146 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { base44 } from '@/api/base44Client';
+import { format } from 'date-fns';
 
-export default function SubscriptionDialog({ open, onClose, workspaceId, onCreated }) {
+export default function SubscriptionDialog({ open, onClose, subscription, workspaceId, onSaved }) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     service_name: '',
     description: '',
     amount: 0,
-    billing_cycle: 'monthly',
-    next_billing_date: '',
+    billing_frequency: 'monthly',
+    billing_date: 1,
+    next_billing_date: format(new Date(), 'yyyy-MM-dd'),
     payment_method: '',
     category: 'software',
+    status: 'active',
     url: '',
-    is_active: true,
-    auto_renew: true
+    notes: ''
   });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.service_name || !formData.amount) return;
-
-    setLoading(true);
-    try {
-      await base44.entities.Subscription.create({
-        workspace_id: workspaceId,
-        ...formData
-      });
-      onCreated();
+  useEffect(() => {
+    if (subscription) {
+      setFormData(subscription);
+    } else {
       setFormData({
         service_name: '',
         description: '',
         amount: 0,
-        billing_cycle: 'monthly',
-        next_billing_date: '',
+        billing_frequency: 'monthly',
+        billing_date: 1,
+        next_billing_date: format(new Date(), 'yyyy-MM-dd'),
         payment_method: '',
         category: 'software',
+        status: 'active',
         url: '',
-        is_active: true,
-        auto_renew: true
+        notes: ''
       });
+    }
+  }, [subscription]);
+
+  const handleSave = async () => {
+    setLoading(true);
+    try {
+      if (subscription) {
+        await base44.entities.Subscription.update(subscription.id, formData);
+      } else {
+        await base44.entities.Subscription.create({ ...formData, workspace_id: workspaceId });
+      }
+      onSaved();
     } catch (error) {
-      console.error('Failed to create subscription:', error);
+      console.error('Failed to save subscription:', error);
     }
     setLoading(false);
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Subscription</DialogTitle>
+          <DialogTitle>{subscription ? 'Edit Subscription' : 'Add Subscription'}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+
+        <div className="space-y-4 py-4">
           <div>
-            <Label>Service Name *</Label>
+            <Label>Service Name</Label>
             <Input
               value={formData.service_name}
               onChange={(e) => setFormData({ ...formData, service_name: e.target.value })}
-              placeholder="GitHub Pro"
+              placeholder="Slack"
             />
           </div>
 
           <div>
             <Label>Description</Label>
-            <Textarea
+            <Input
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="What is this service used for?"
-              className="h-20"
+              placeholder="Team communication"
             />
           </div>
 
-          <div>
-            <Label>Amount *</Label>
-            <Input
-              type="number"
-              step="0.01"
-              value={formData.amount}
-              onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-              placeholder="9.99"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Amount</Label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formData.amount}
+                onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Label>Billing Frequency</Label>
+              <Select value={formData.billing_frequency} onValueChange={(value) => setFormData({ ...formData, billing_frequency: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="yearly">Yearly</SelectItem>
+                  <SelectItem value="one-time">One-time</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
-          <div>
-            <Label>Billing Cycle</Label>
-            <Select value={formData.billing_cycle} onValueChange={(value) => setFormData({ ...formData, billing_cycle: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="quarterly">Quarterly</SelectItem>
-                <SelectItem value="yearly">Yearly</SelectItem>
-                <SelectItem value="one-time">One-time</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Category</Label>
+              <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="software">Software</SelectItem>
+                  <SelectItem value="hosting">Hosting</SelectItem>
+                  <SelectItem value="marketing">Marketing</SelectItem>
+                  <SelectItem value="tools">Tools</SelectItem>
+                  <SelectItem value="services">Services</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Status</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="trial">Trial</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           <div>
@@ -114,29 +153,11 @@ export default function SubscriptionDialog({ open, onClose, workspaceId, onCreat
           </div>
 
           <div>
-            <Label>Category</Label>
-            <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="software">Software</SelectItem>
-                <SelectItem value="hosting">Hosting</SelectItem>
-                <SelectItem value="marketing">Marketing</SelectItem>
-                <SelectItem value="design">Design</SelectItem>
-                <SelectItem value="productivity">Productivity</SelectItem>
-                <SelectItem value="communication">Communication</SelectItem>
-                <SelectItem value="other">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
             <Label>Payment Method</Label>
             <Input
               value={formData.payment_method}
               onChange={(e) => setFormData({ ...formData, payment_method: e.target.value })}
-              placeholder="Company Amex ••1234"
+              placeholder="Card ending in 1234"
             />
           </div>
 
@@ -145,33 +166,26 @@ export default function SubscriptionDialog({ open, onClose, workspaceId, onCreat
             <Input
               value={formData.url}
               onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-              placeholder="https://github.com"
+              placeholder="https://slack.com"
             />
           </div>
 
-          <div className="flex items-center justify-between">
-            <Label>Active</Label>
-            <Switch
-              checked={formData.is_active}
-              onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+          <div>
+            <Label>Notes</Label>
+            <Textarea
+              value={formData.notes}
+              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              placeholder="Additional details..."
             />
           </div>
+        </div>
 
-          <div className="flex items-center justify-between">
-            <Label>Auto-Renew</Label>
-            <Switch
-              checked={formData.auto_renew}
-              onCheckedChange={(checked) => setFormData({ ...formData, auto_renew: checked })}
-            />
-          </div>
-
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit" disabled={loading || !formData.service_name}>
-              {loading ? 'Adding...' : 'Add Subscription'}
-            </Button>
-          </DialogFooter>
-        </form>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={loading || !formData.service_name}>
+            {loading ? 'Saving...' : 'Save'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

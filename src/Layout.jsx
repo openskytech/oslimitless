@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { 
   Home, Settings, LogOut, Bell, Crown, Users, 
-  Lock, Menu, X, Zap
+  Lock, Menu, X, Zap, DollarSign
 } from 'lucide-react';
 import RoleBadge from '@/components/ui/RoleBadge';
 import { Badge } from '@/components/ui/badge';

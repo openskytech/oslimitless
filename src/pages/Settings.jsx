@@ -452,6 +452,15 @@ export default function Settings() {
                 <Button onClick={async () => {
                   setSaving(true);
                   await base44.auth.updateMe({ full_name: currentUser.full_name });
+                  
+                  // Update all WorkspaceMember records with the new name
+                  const userMemberships = await base44.entities.WorkspaceMember.filter({ user_email: currentUser.email });
+                  await Promise.all(
+                    userMemberships.map(membership => 
+                      base44.entities.WorkspaceMember.update(membership.id, { user_name: currentUser.full_name })
+                    )
+                  );
+                  
                   setSaving(false);
                   window.location.reload();
                 }} disabled={saving}>

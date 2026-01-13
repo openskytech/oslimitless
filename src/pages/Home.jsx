@@ -22,7 +22,6 @@ export default function Home() {
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [createProjectOpen, setCreateProjectOpen] = useState(false);
   const [joinWorkspaceOpen, setJoinWorkspaceOpen] = useState(false);
-  const [inviteCodeOpen, setInviteCodeOpen] = useState(false);
   const queryClient = useQueryClient();
   const { quip, showQuip } = useQuip('project_load', true);
 
@@ -198,18 +197,11 @@ export default function Home() {
       <header className={`sticky top-0 z-40 ${darkMode ? 'bg-gray-800/90' : 'bg-white/80'} backdrop-blur-md border-b ${darkMode ? 'border-gray-700' : 'border-gray-100'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-end">
-            <div className="flex items-center gap-2">
-              {userRole === 'ceo' && (
-                <Button variant="outline" size="sm" onClick={() => setInviteCodeOpen(true)}>
-                  <Ticket className="w-4 h-4 mr-1" /> Invite
-                </Button>
-              )}
-              <Link to={createPageUrl('Settings')}>
-                <Button variant="ghost" size="icon">
-                  <Settings className="w-5 h-5" />
-                </Button>
-              </Link>
-            </div>
+            <Link to={createPageUrl('Settings')}>
+              <Button variant="ghost" size="icon">
+                <Settings className="w-5 h-5" />
+              </Button>
+            </Link>
           </div>
         </div>
       </header>
@@ -283,13 +275,6 @@ export default function Home() {
           queryClient.invalidateQueries(['memberships']);
           queryClient.invalidateQueries(['workspaces']);
         }}
-      />
-
-      <InviteCodeDialog
-        open={inviteCodeOpen}
-        onClose={() => setInviteCodeOpen(false)}
-        workspaceId={selectedWorkspace?.id}
-        workspaceName={selectedWorkspace?.name}
       />
 
       <QuipToast quip={quip} />

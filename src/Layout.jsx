@@ -133,15 +133,6 @@ export default function Layout({ children, currentPageName }) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setDarkMode(!darkMode)}
-                className="text-white hover:bg-white/10"
-              >
-                {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
                 className="relative text-white hover:bg-white/10"
               >
                 <Bell className="w-5 h-5" />

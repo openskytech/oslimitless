@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
 import PlatformBadge from '@/components/ui/PlatformBadge';
@@ -40,6 +41,7 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [platforms, setPlatforms] = useState([]);
   const [icon, setIcon] = useState('folder');
   const [color, setColor] = useState(COLORS[0]);
@@ -48,6 +50,7 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
   useEffect(() => {
     if (project) {
       setName(project.name || '');
+      setDescription(project.description || '');
       setPlatforms(project.platforms || []);
       setIcon(project.icon || 'folder');
       setColor(project.color || COLORS[0]);
@@ -83,6 +86,7 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
     try {
       await base44.entities.Project.update(project.id, { 
         name,
+        description,
         platforms, 
         icon: iconUrl ? null : icon, 
         color, 
@@ -110,6 +114,16 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter project name"
+            />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Project Description</Label>
+            <Textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder="Describe your project..."
+              className="min-h-[80px]"
             />
           </div>
 

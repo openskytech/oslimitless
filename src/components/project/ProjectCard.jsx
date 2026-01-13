@@ -24,6 +24,7 @@ export default function ProjectCard({ project, taskStats = {} }) {
     cloud: Cloud, cpu: Cpu, layers: Layers, box: Box
   };
   const ProjectIcon = iconMap[project?.icon] || Folder;
+  const darkMode = document.documentElement.classList.contains('dark');
 
   return (
     <motion.div
@@ -33,7 +34,7 @@ export default function ProjectCard({ project, taskStats = {} }) {
       transition={{ duration: 0.2 }}
     >
       <Link to={createPageUrl('ProjectDetail') + `?id=${project.id}`}>
-        <Card className="h-full hover:shadow-xl transition-all duration-300 border-2 border-transparent hover:border-indigo-200 overflow-hidden group cursor-pointer">
+        <Card className={`h-full hover:shadow-xl transition-all duration-300 border-2 border-transparent ${darkMode ? 'hover:border-indigo-500 bg-gray-800' : 'hover:border-indigo-200'} overflow-hidden group cursor-pointer`}>
           {/* Color Bar or Image Header */}
           {project.icon_url ? (
             <div 
@@ -69,7 +70,7 @@ export default function ProjectCard({ project, taskStats = {} }) {
                   </div>
                 )}
                 <div>
-                  <h3 className="font-bold text-lg text-gray-900 group-hover:text-indigo-600 transition-colors">
+                  <h3 className={`font-bold text-lg ${darkMode ? 'text-white' : 'text-gray-900'} group-hover:text-indigo-600 transition-colors`}>
                     {project.name}
                   </h3>
                   <StatusBadge status={project.status} size="sm" />
@@ -82,7 +83,7 @@ export default function ProjectCard({ project, taskStats = {} }) {
           <CardContent className="space-y-4">
             {/* Description */}
             {project.description && (
-              <p className="text-sm text-gray-500 line-clamp-2">{project.description}</p>
+              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-500'} line-clamp-2`}>{project.description}</p>
             )}
 
             {/* Platforms */}

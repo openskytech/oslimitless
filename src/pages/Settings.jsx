@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { 
   ArrowLeft, Settings as SettingsIcon, Users, Sparkles, 
-  Bell, Link2, Save, Trash2, LogOut, Copy, Check
+  Bell, Link2, Save, Trash2, LogOut, Copy, Check, Upload, X
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { createPageUrl } from '../utils';
@@ -24,10 +24,12 @@ export default function Settings() {
   const [selectedWorkspace, setSelectedWorkspace] = useState(null);
   const [inviteCodeOpen, setInviteCodeOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [workspaceSettings, setWorkspaceSettings] = useState({
     name: '',
     description: '',
+    logo_url: '',
     teams_webhook_url: '',
     quips_enabled: true
   });
@@ -66,6 +68,7 @@ export default function Settings() {
       setWorkspaceSettings({
         name: workspaces[0].name || '',
         description: workspaces[0].description || '',
+        logo_url: workspaces[0].logo_url || '',
         teams_webhook_url: workspaces[0].teams_webhook_url || '',
         quips_enabled: workspaces[0].quips_enabled ?? true
       });
@@ -88,6 +91,20 @@ export default function Settings() {
   const userRole = currentMembership?.role || 'viewer';
   const isCeo = userRole === 'ceo';
   const isManager = ['ceo', 'manager'].includes(userRole);
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setWorkspaceSettings({ ...workspaceSettings, logo_url: file_url });
+    } catch (error) {
+      console.error('Failed to upload logo:', error);
+    }
+    setUploading(false);
+  };
 
   const saveWorkspaceSettings = async () => {
     if (!selectedWorkspace) return;
@@ -192,6 +209,45 @@ export default function Settings() {
                     disabled={!isManager}
                     className="mt-1"
                   />
+                </div>
+
+                <div>
+                  <Label>Workspace Logo</Label>
+                  <div className="mt-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoUpload}
+                      className="hidden"
+                      id="logo-upload"
+                      disabled={uploading || !isManager}
+                    />
+                    <label
+                      htmlFor="logo-upload"
+                      className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg border-2 border-dashed border-gray-300 hover:border-indigo-400 transition-colors bg-gray-50 hover:bg-indigo-50 ${!isManager ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <Upload className="w-4 h-4" />
+                      <span className="text-sm font-medium">
+                        {uploading ? 'Uploading...' : 'Upload Logo'}
+                      </span>
+                    </label>
+                    
+                    {workspaceSettings.logo_url && (
+                      <div className="mt-3 inline-flex items-center gap-3 px-3 py-2 bg-indigo-50 rounded-lg">
+                        <img src={workspaceSettings.logo_url} alt="Logo" className="w-8 h-8 rounded object-cover" />
+                        <span className="text-sm text-indigo-700">Logo uploaded</span>
+                        {isManager && (
+                          <button
+                            type="button"
+                            onClick={() => setWorkspaceSettings({ ...workspaceSettings, logo_url: '' })}
+                            className="ml-1 text-indigo-600 hover:text-indigo-800"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between p-4 bg-purple-50 rounded-lg">

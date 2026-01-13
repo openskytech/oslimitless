@@ -12,7 +12,7 @@ const PLATFORMS = ['web', 'ios', 'android', 'api', 'other'];
 const PRIORITIES = ['low', 'medium', 'high', 'urgent'];
 const CARD_COLORS = ['yellow', 'pink', 'blue', 'green', 'purple', 'orange'];
 
-export default function TaskCreateDialog({ open, onClose, project, initialStatus = 'backlog', onCreated }) {
+export default function TaskCreateDialog({ open, onClose, project, initialStatus = 'backlog', onCreated, members = [] }) {
   const [loading, setLoading] = useState(false);
   const [task, setTask] = useState({
     title: '',
@@ -20,6 +20,7 @@ export default function TaskCreateDialog({ open, onClose, project, initialStatus
     status: initialStatus,
     priority: 'medium',
     platforms: [],
+    assignees: [],
     card_color: 'yellow'
   });
 
@@ -29,6 +30,15 @@ export default function TaskCreateDialog({ open, onClose, project, initialStatus
       setTask({ ...task, platforms: platforms.filter(p => p !== platform) });
     } else {
       setTask({ ...task, platforms: [...platforms, platform] });
+    }
+  };
+
+  const toggleAssignee = (email) => {
+    const assignees = task.assignees || [];
+    if (assignees.includes(email)) {
+      setTask({ ...task, assignees: assignees.filter(a => a !== email) });
+    } else {
+      setTask({ ...task, assignees: [...assignees, email] });
     }
   };
 
@@ -48,6 +58,7 @@ export default function TaskCreateDialog({ open, onClose, project, initialStatus
         status: initialStatus,
         priority: 'medium',
         platforms: [],
+        assignees: [],
         card_color: 'yellow'
       });
     } catch (error) {
@@ -82,6 +93,38 @@ export default function TaskCreateDialog({ open, onClose, project, initialStatus
               onChange={(e) => setTask({ ...task, description: e.target.value })}
               className="mt-1 min-h-[80px]"
             />
+          </div>
+
+          <div>
+            <Label className="mb-2 block">Assignees</Label>
+            <div className="flex flex-wrap gap-2">
+              {members.map(member => {
+                const isAssigned = (task.assignees || []).includes(member.user_email);
+                return (
+                  <button
+                    key={member.user_email}
+                    type="button"
+                    onClick={() => toggleAssignee(member.user_email)}
+                    className={`
+                      flex items-center gap-2 px-3 py-1.5 rounded-full border-2 transition-all
+                      ${isAssigned 
+                        ? 'bg-indigo-50 border-indigo-300 text-indigo-700' 
+                        : 'bg-gray-50 border-gray-200 text-gray-500'
+                      }
+                      hover:border-indigo-300 cursor-pointer
+                    `}
+                  >
+                    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                      {(member.user_name || member.user_email)[0].toUpperCase()}
+                    </div>
+                    <span className="text-sm font-medium">{member.user_name || member.user_email}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {members.length === 0 && (
+              <p className="text-gray-400 text-sm">No team members yet</p>
+            )}
           </div>
 
           <div>

@@ -191,7 +191,7 @@ export default function TaskDetailSheet({
             {/* Assignees */}
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">Assignees</Label>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 mb-2">
                 {members.map(member => {
                   const isAssigned = (editedTask.assignees || []).includes(member.user_email);
                   return (
@@ -216,6 +216,19 @@ export default function TaskDetailSheet({
                   );
                 })}
               </div>
+              {!isEditing && !(editedTask.assignees || []).includes(currentUser.email) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={async () => {
+                    const updatedAssignees = [...(editedTask.assignees || []), currentUser.email];
+                    await base44.entities.Task.update(task.id, { assignees: updatedAssignees });
+                    onUpdate?.();
+                  }}
+                >
+                  <User className="w-4 h-4 mr-1" /> Assign to Me
+                </Button>
+              )}
             </div>
 
             {/* Due Date & Priority Row */}

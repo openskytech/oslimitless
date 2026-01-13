@@ -4,11 +4,10 @@ import path from "node:path";
 
 export default defineConfig({
   plugins: [react()],
+  base: "/oslimitless/",
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  // GitHub Pages (your URL is /oslimitless/)
-  base: "/oslimitless/",
 });

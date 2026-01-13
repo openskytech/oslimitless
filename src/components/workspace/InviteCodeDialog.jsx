@@ -131,6 +131,11 @@ export default function InviteCodeDialog({ open, onClose, workspaceId, workspace
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="ceo">
+                    <div className="flex items-center gap-2">
+                      <RoleBadge role="ceo" size="xs" /> CEO
+                    </div>
+                  </SelectItem>
                   <SelectItem value="manager">
                     <div className="flex items-center gap-2">
                       <RoleBadge role="manager" size="xs" /> Manager

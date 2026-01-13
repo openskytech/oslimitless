@@ -27,13 +27,8 @@ export default function Home() {
 
   useEffect(() => {
     const loadUser = async () => {
-      try {
-        const user = await base44.auth.me();
-        setCurrentUser(user);
-      } catch (error) {
-        console.error('Failed to load user:', error);
-        base44.auth.redirectToLogin();
-      }
+      const user = await base44.auth.me();
+      setCurrentUser(user);
     };
     loadUser();
   }, []);

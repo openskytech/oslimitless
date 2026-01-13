@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { 
   Home, Settings, LogOut, Bell, Crown, Users, 
-  Lock, Menu, X, Zap, DollarSign
+  Lock, Menu, X, Zap
 } from 'lucide-react';
 import RoleBadge from '@/components/ui/RoleBadge';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +37,6 @@ export default function Layout({ children, currentPageName }) {
       }
     } catch (error) {
       console.error('Failed to load user:', error);
-      base44.auth.redirectToLogin();
     }
   };
 
@@ -55,28 +54,8 @@ export default function Layout({ children, currentPageName }) {
     base44.auth.logout();
   };
 
-  const [hasFinanceAccess, setHasFinanceAccess] = React.useState(false);
-
-  React.useEffect(() => {
-    const checkFinanceAccess = async () => {
-      if (!user?.email || !membership?.workspace_id) return;
-      
-      if (membership.role === 'ceo') {
-        setHasFinanceAccess(true);
-      } else {
-        const access = await base44.entities.FinanceAccess.filter({
-          workspace_id: membership.workspace_id,
-          user_email: user.email
-        });
-        setHasFinanceAccess(access.length > 0);
-      }
-    };
-    checkFinanceAccess();
-  }, [user?.email, membership?.workspace_id, membership?.role]);
-
   const navItems = [
     { name: 'Home', icon: Home, page: 'Home' },
-    ...(hasFinanceAccess ? [{ name: 'Finances', icon: DollarSign, page: 'Finances' }] : []),
     ...(membership?.role === 'ceo' ? [{ name: 'CEO Inbox', icon: Crown, page: 'CEOInbox' }] : []),
     { name: 'Vault', icon: Lock, page: 'Vault' },
     { name: 'Team', icon: Users, page: 'Team' },

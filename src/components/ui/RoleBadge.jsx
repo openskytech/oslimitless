@@ -8,7 +8,7 @@ const roleConfig = {
   viewer: { icon: Eye, color: 'bg-gray-100 text-gray-600 border-gray-200', label: 'Viewer' }
 };
 
-export default function RoleBadge({ role, size = 'sm' }) {
+export default function RoleBadge({ role, size = 'sm', className = '' }) {
   const config = roleConfig[role] || roleConfig.contributor;
   const Icon = config.icon;
   
@@ -19,7 +19,7 @@ export default function RoleBadge({ role, size = 'sm' }) {
   };
 
   return (
-    <span className={`inline-flex items-center font-semibold rounded-full border ${config.color} ${sizeClasses[size]}`}>
+    <span className={`inline-flex items-center justify-center font-semibold rounded-full border ${config.color} ${sizeClasses[size]} ${className}`}>
       <Icon className={size === 'xs' ? 'w-2.5 h-2.5' : size === 'sm' ? 'w-3 h-3' : 'w-4 h-4'} />
       {config.label}
     </span>

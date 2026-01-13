@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { base44 } from '@/api/base44Client';
 import PlatformBadge from '@/components/ui/PlatformBadge';
@@ -38,6 +39,7 @@ const COLORS = [
 export default function ProjectEditDialog({ open, onClose, project, onUpdated }) {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [name, setName] = useState('');
   const [platforms, setPlatforms] = useState([]);
   const [icon, setIcon] = useState('folder');
   const [color, setColor] = useState(COLORS[0]);
@@ -45,6 +47,7 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
 
   useEffect(() => {
     if (project) {
+      setName(project.name || '');
       setPlatforms(project.platforms || []);
       setIcon(project.icon || 'folder');
       setColor(project.color || COLORS[0]);
@@ -75,9 +78,11 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
   };
 
   const handleSave = async () => {
+    if (!name.trim()) return;
     setLoading(true);
     try {
       await base44.entities.Project.update(project.id, { 
+        name,
         platforms, 
         icon: iconUrl ? null : icon, 
         color, 
@@ -99,6 +104,15 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
         </DialogHeader>
 
         <div className="space-y-5 py-4">
+          <div>
+            <Label className="mb-2 block">Project Name</Label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Enter project name"
+            />
+          </div>
+
           <div>
             <Label className="mb-3 block">Project Icon</Label>
             
@@ -201,7 +215,7 @@ export default function ProjectEditDialog({ open, onClose, project, onUpdated })
 
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSave} disabled={loading}>
+          <Button onClick={handleSave} disabled={loading || !name.trim()}>
             {loading ? 'Saving...' : 'Save Changes'}
           </Button>
         </DialogFooter>

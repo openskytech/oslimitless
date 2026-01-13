@@ -115,6 +115,7 @@ export default function KanbanBoard({
         project={project}
         initialStatus={createDialogStatus}
         onCreated={handleTaskCreated}
+        members={members}
       />
     </>
   );

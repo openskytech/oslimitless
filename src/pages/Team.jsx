@@ -41,14 +41,11 @@ export default function Team() {
     }
   };
 
-  const { data: allMembers = [] } = useQuery({
+  const { data: members = [] } = useQuery({
     queryKey: ['members', workspace?.id],
     queryFn: () => base44.entities.WorkspaceMember.filter({ workspace_id: workspace.id }, '-created_date'),
     enabled: !!workspace?.id
   });
-
-  // Filter out the current user from the members list
-  const members = allMembers.filter(member => member.user_email !== user?.email);
 
   const { data: inviteCodes = [] } = useQuery({
     queryKey: ['invite-codes', workspace?.id],

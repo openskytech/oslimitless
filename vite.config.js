@@ -12,9 +12,17 @@ export default defineConfig(({ mode }) => {
       alias: {
         "@": path.resolve(__dirname, "./src"),
       },
+      extensions: [".mjs", ".js", ".jsx", ".ts", ".tsx", ".json"],
     },
     server: {
-      allowedHosts: "all", // 👈 THIS is the key line
+      allowedHosts: "all", // fixes Base44 modal.host error
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        loader: {
+          ".js": "jsx",
+        },
+      },
     },
   };
 });

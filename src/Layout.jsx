@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import RoleBadge from '@/components/ui/RoleBadge';
 import { Badge } from '@/components/ui/badge';
 import { useQuery } from '@tanstack/react-query';
 
-export default function Layout() {
+export default function Layout({ currentPageName, children }) {
   const [loading, setLoading] = useState(true);
 
   const [user, setUser] = useState(null);

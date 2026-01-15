@@ -2,11 +2,10 @@ import CEOInbox from './pages/CEOInbox';
 import Home from './pages/Home';
 import ProjectAnalytics from './pages/ProjectAnalytics';
 import ProjectDetail from './pages/ProjectDetail';
-import TaskList from './pages/TaskList';
-import Vault from './pages/Vault';
 import Settings from './pages/Settings';
+import TaskList from './pages/TaskList';
 import Team from './pages/Team';
-import BusinessFinances from './pages/BusinessFinances';
+import Vault from './pages/Vault';
 import __Layout from './Layout.jsx';
 
 
@@ -15,11 +14,10 @@ export const PAGES = {
     "Home": Home,
     "ProjectAnalytics": ProjectAnalytics,
     "ProjectDetail": ProjectDetail,
-    "TaskList": TaskList,
-    "Vault": Vault,
     "Settings": Settings,
+    "TaskList": TaskList,
     "Team": Team,
-    "BusinessFinances": BusinessFinances,
+    "Vault": Vault,
 }
 
 export const pagesConfig = {

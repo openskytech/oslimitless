@@ -6,6 +6,7 @@ import Settings from './pages/Settings';
 import TaskList from './pages/TaskList';
 import Team from './pages/Team';
 import Vault from './pages/Vault';
+import Finance from './pages/Finance';
 import __Layout from './Layout.jsx';
 
 
@@ -18,6 +19,7 @@ export const PAGES = {
     "TaskList": TaskList,
     "Team": Team,
     "Vault": Vault,
+    "Finance": Finance,
 }
 
 export const pagesConfig = {

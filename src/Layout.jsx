@@ -5,7 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { 
   Home, Settings, LogOut, Bell, Crown, Users, 
-  Lock, Menu, X, Zap
+  Lock, Menu, X, Zap, Wallet
 } from 'lucide-react';
 import RoleBadge from '@/components/ui/RoleBadge';
 import { Badge } from '@/components/ui/badge';
@@ -57,6 +57,7 @@ export default function Layout({ children, currentPageName }) {
   const navItems = [
     { name: 'Home', icon: Home, page: 'Home' },
     ...(membership?.role === 'ceo' ? [{ name: 'CEO Inbox', icon: Crown, page: 'CEOInbox' }] : []),
+    ...(user?.email === 'mo@openskytechnologies.com' ? [{ name: 'Finance', icon: Wallet, page: 'Finance' }] : []),
     { name: 'Vault', icon: Lock, page: 'Vault' },
     { name: 'Team', icon: Users, page: 'Team' },
     { name: 'Settings', icon: Settings, page: 'Settings' }

@@ -18,7 +18,8 @@ export default function TransactionsTab({ transactions, accounts, workspaceId, o
     expense: 'bg-red-100 text-red-800',
     transfer: 'bg-blue-100 text-blue-800',
     subscription: 'bg-purple-100 text-purple-800',
-    payment: 'bg-orange-100 text-orange-800'
+    payment: 'bg-orange-100 text-orange-800',
+    owner_funding: 'bg-cyan-100 text-cyan-800'
   };
 
   const handleDelete = async (id) => {

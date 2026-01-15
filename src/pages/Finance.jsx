@@ -68,6 +68,18 @@ export default function Finance() {
   });
 
   // Check if user is mo@openskytechnologies.com
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardContent className="pt-6 text-center">
+            <p className="text-red-600">{error}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">

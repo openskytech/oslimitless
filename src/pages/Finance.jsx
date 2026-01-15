@@ -14,12 +14,18 @@ export default function Finance() {
   const [user, setUser] = React.useState(null);
   const [selectedTab, setSelectedTab] = useState('accounts');
   const [selectedAccount, setSelectedAccount] = useState(null);
+  const [error, setError] = React.useState(null);
   const queryClient = useQueryClient();
 
   React.useEffect(() => {
     const loadUser = async () => {
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
+      try {
+        const currentUser = await base44.auth.me();
+        setUser(currentUser);
+      } catch (err) {
+        setError('Failed to load user');
+        console.error('Finance page error:', err);
+      }
     };
     loadUser();
   }, []);

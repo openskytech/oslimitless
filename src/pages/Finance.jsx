@@ -62,7 +62,15 @@ export default function Finance() {
   });
 
   // Check if user is mo@openskytechnologies.com
-  if (!user || user.email !== 'mo@openskytechnologies.com') {
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+        <p className="text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  if (user.email !== 'mo@openskytechnologies.com') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <Card className="max-w-md">
